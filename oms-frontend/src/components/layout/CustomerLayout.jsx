@@ -1,11 +1,12 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
-import useCartStore from "../../store/cartStore";
+import { useLogout } from "../../hooks/useAuth";
+import CartIcon from "../cart/CartIcon";
 
 const CustomerLayout = () => {
-  const { user, logout } = useAuthStore();
-  const { items } = useCartStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
+  const logoutMutation = useLogout();
 
   return (
     <div className="min-h-screen bg-background text-on-background flex flex-col font-sans">
@@ -56,17 +57,8 @@ const CustomerLayout = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate("/cart")}
-            className="p-2 text-on-surface-variant hover:bg-white/40 rounded-full transition-all scale-95 active:scale-90 relative"
-          >
-            <span className="material-symbols-outlined">shopping_cart</span>
-            {items.length > 0 && (
-              <span className="absolute top-0 right-0 w-4 h-4 bg-error text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white">
-                {items.length}
-              </span>
-            )}
-          </button>
+          {/* Cart Icon — opens drawer, works for guests too */}
+          <CartIcon />
           
           <div className="flex items-center gap-3 ml-2 pl-4 border-l border-outline-variant/30 relative group cursor-pointer">
             <span className="text-sm font-semibold text-on-surface truncate max-w-[100px]">{user?.name}</span>
@@ -74,13 +66,14 @@ const CustomerLayout = () => {
               {user?.name?.charAt(0).toUpperCase()}
             </div>
             {/* Hover Logout Menu */}
-            <div className="absolute top-12 right-0 w-32 bg-surface-container-lowest rounded-xl shadow-soft opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2">
+            <div className="absolute top-12 right-0 w-36 bg-surface-container-lowest rounded-xl shadow-soft opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2">
               <button
-                onClick={logout}
-                className="w-full text-left px-4 py-2 text-sm text-error font-semibold hover:bg-error/10 rounded-lg flex items-center gap-2"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="w-full text-left px-4 py-2 text-sm text-error font-semibold hover:bg-error/10 rounded-lg flex items-center gap-2 disabled:opacity-60"
               >
                 <span className="material-symbols-outlined text-sm">logout</span>
-                Logout
+                {logoutMutation.isPending ? "Signing out…" : "Logout"}
               </button>
             </div>
           </div>
