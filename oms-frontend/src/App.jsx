@@ -1,54 +1,193 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "./components/common/ProtectedRoute";
+import useAuthStore from "./store/authStore";
+
+// ── Layouts ──────────────────────────────────────────────
 import RoleBasedLayout from "./components/layout/RoleBasedLayout";
+
+// ── Pages ────────────────────────────────────────────────
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
-import OrderSuccessPage from "./pages/OrderSuccessPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
+import OrderSuccessPage from "./pages/OrderSuccessPage";
 
-const NotFound = () => (
-  <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-    <span className="material-symbols-outlined text-6xl text-outline-variant mb-4">explore_off</span>
-    <h1 className="text-4xl font-semibold tracking-tight text-on-surface mb-2">404</h1>
-    <p className="text-on-surface-variant text-sm">This page doesn&apos;t exist.</p>
-  </div>
-);
+// ─────────────────────────────────────────────────────────
+//  ROUTE GUARDS
+// ─────────────────────────────────────────────────────────
+
+/**
+ * PrivateRoute
+ * Only logged-in users (any role) can access.
+ * Guest → redirect to /login
+ */
+const PrivateRoute = ({ children }) => {
+  const { user } = useAuthStore();
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+};
+
+/**
+ * AdminRoute
+ * Only ADMIN or MANAGER can access.
+ * Not logged in   → redirect to /login
+ * Wrong role      → redirect to /dashboard
+ */
+const AdminRoute = ({ children }) => {
+  const { user } = useAuthStore();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "ADMIN" && user.role !== "MANAGER") {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
+/**
+ * AuthRoute
+ * Only guests (not logged in) can access /login and /register.
+ * Already logged in as Admin/Manager → redirect to /dashboard
+ * Already logged in as Customer      → redirect to /dashboard
+ */
+const AuthRoute = ({ children }) => {
+  const { user } = useAuthStore();
+  if (!user) return children;
+  return <Navigate to="/dashboard" replace />;
+};
+
+// ─────────────────────────────────────────────────────────
+//  APP
+// ─────────────────────────────────────────────────────────
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {/* ════════════════════════════════════════════════
+            AUTH PAGES — no layout shell, full screen pages
+            Guests only — logged-in users redirected away
+            ════════════════════════════════════════════════ */}
+        <Route
+          path="/login"
+          element={
+            <AuthRoute>
+              <LoginPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <AuthRoute>
+              <RegisterPage />
+            </AuthRoute>
+          }
+        />
 
-        {/* All authenticated users — layout auto-selects by role */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<RoleBasedLayout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/products" element={<ProductsPage />} />
-            <Route path="/orders" element={<OrdersPage adminView={false} />} />
+        {/* ════════════════════════════════════════════════
+            MAIN APP — wrapped in RoleBasedLayout shell
+            RoleBasedLayout decides:
+              Admin/Manager → MainLayout (dark sidebar)
+              Customer/Guest → CustomerLayout (top navbar)
+            ════════════════════════════════════════════════ */}
+        <Route element={<RoleBasedLayout />}>
+          {/* ── / → always redirect to /dashboard ── */}
+          <Route index element={<Navigate to="/dashboard" replace />} />
 
-            {/* Customer only */}
-            <Route element={<ProtectedRoute allowedRoles={["CUSTOMER"]} />}>
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/order-success/:id" element={<OrderSuccessPage />} />
-              <Route path="/order-detail/:id" element={<OrderDetailPage />} />
-            </Route>
+          {/* ── /dashboard ──────────────────────────────
+              FULLY PUBLIC — no guard at all.
+              DashboardPage renders different UI based on role:
+                Guest (user = null)  → customer bento product grid
+                CUSTOMER             → bento grid + order stats
+                ADMIN / MANAGER      → KPI cards + charts + table
+              ─────────────────────────────────────────── */}
+          <Route path="/dashboard" element={<DashboardPage />} />
 
-            {/* Admin / Manager only */}
-            <Route element={<ProtectedRoute allowedRoles={["ADMIN", "MANAGER"]} />}>
-              <Route path="/admin/orders" element={<OrdersPage adminView={true} />} />
-            </Route>
-          </Route>
+          {/* ── /products ───────────────────────────────
+              FULLY PUBLIC — guests, customers, admin all see it.
+              ProductsPage renders different UI based on role:
+                Guest / Customer → product grid with add to cart
+                Admin            → inventory table with CRUD
+              ─────────────────────────────────────────── */}
+          <Route path="/products" element={<ProductsPage />} />
+
+          {/* ── /cart ───────────────────────────────────
+              FULLY PUBLIC — guests can add items and view cart.
+              CartPage handles the guest checkout flow internally:
+                Guest clicks "Place Order"
+                  → LoginModal appears (NOT a redirect)
+                  → After login, order is placed automatically
+                  → Cart data stays intact in Zustand
+              ─────────────────────────────────────────── */}
+          <Route path="/cart" element={<CartPage />} />
+
+          {/* ── /orders ─────────────────────────────────
+              PRIVATE — must be logged in.
+              OrdersPage renders based on role:
+                CUSTOMER         → own orders only (card view)
+                ADMIN / MANAGER  → all orders (table view)
+              ─────────────────────────────────────────── */}
+          <Route
+            path="/orders"
+            element={
+              <PrivateRoute>
+                <OrdersPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* ── /orders/:id ─────────────────────────────
+              PRIVATE — must be logged in.
+              CUSTOMER         → can only view their own order
+              ADMIN / MANAGER  → can view any order
+              (access control enforced inside the component
+               and also on the backend API)
+              ─────────────────────────────────────────── */}
+          <Route
+            path="/orders/:id"
+            element={
+              <PrivateRoute>
+                <OrderDetailPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* ── /order-success/:id ──────────────────────
+              PRIVATE — user must be logged in to have
+              placed an order in the first place.
+              Shows order confirmation screen after checkout.
+              ─────────────────────────────────────────── */}
+          <Route
+            path="/order-success/:id"
+            element={
+              <PrivateRoute>
+                <OrderSuccessPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* ── /admin/orders ───────────────────────────
+              ADMIN / MANAGER ONLY.
+              Dedicated URL for sidebar nav link.
+              Same OrdersPage component but accessed via
+              admin sidebar — always shows all orders table.
+              ─────────────────────────────────────────── */}
+          <Route
+            path="/admin/orders"
+            element={
+              <AdminRoute>
+                <OrdersPage />
+              </AdminRoute>
+            }
+          />
+
+          {/* ── catch all ───────────────────────────────
+              Any unknown URL → back to /dashboard
+              ─────────────────────────────────────────── */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
-
-        <Route path="*" element={<NotFound />} />
+        {/* end RoleBasedLayout */}
       </Routes>
     </BrowserRouter>
   );
