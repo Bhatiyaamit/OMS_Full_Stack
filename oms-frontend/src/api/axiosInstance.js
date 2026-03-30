@@ -2,8 +2,8 @@ import axios from "axios";
 import useAuthStore from "../store/authStore";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://192.168.0.59:5011/api";
-//http://localhost:5011/api
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5011/api";
+//"http://192.168.0.59:5011/api"
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Required — sends HttpOnly cookie on every request
