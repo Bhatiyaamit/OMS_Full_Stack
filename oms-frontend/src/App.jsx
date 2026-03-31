@@ -13,6 +13,7 @@ import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
+import ProfilePage from "./pages/ProfilePage";
 
 // ─────────────────────────────────────────────────────────
 //  ROUTE GUARDS
@@ -163,6 +164,18 @@ function App() {
             element={
               <PrivateRoute>
                 <OrderSuccessPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* ── /profile ────────────────────────────────
+              PRIVATE — user must be logged in.
+              ─────────────────────────────────────────── */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <ProfilePage />
               </PrivateRoute>
             }
           />

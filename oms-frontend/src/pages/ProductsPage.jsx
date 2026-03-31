@@ -21,6 +21,9 @@ const productSchema = z.object({
 const ProductsPage = () => {
   const { user } = useAuthStore();
   const isAdmin = user?.role === "ADMIN";
+  const isManager = user?.role === "MANAGER";
+  const isAdminOrManager = isAdmin || isManager;
+  // Guests (user === null) and CUSTOMER both see the shopping view
   const isCustomer = user?.role === "CUSTOMER";
   const cartItems = useCartStore((s) => s.items);
   const addToCart = useCartStore((s) => s.addItem);
@@ -81,7 +84,7 @@ const ProductsPage = () => {
         });
       });
     }
-    if (!isCustomer && stockFilter !== "all") {
+    if (isAdminOrManager && stockFilter !== "all") {
       result = result.filter((p) => {
         if (stockFilter === "in_stock") return p.stock > 10;
         if (stockFilter === "low_stock") return p.stock > 0 && p.stock <= 10;
@@ -117,6 +120,7 @@ const ProductsPage = () => {
     sortBy,
     stockFilter,
     isCustomer,
+    isAdminOrManager,
   ]);
 
   // ── Availability counts (from full unfiltered array) ──
@@ -485,7 +489,9 @@ const ProductsPage = () => {
   /* ══════════════════════════════════════════════════════════
    *  CUSTOMER VIEW — Stitch "Browse Products" card grid
    * ══════════════════════════════════════════════════════════ */
-  if (isCustomer) {
+  // Guests (user === null) and CUSTOMER both get the shopping/browsing view.
+  // Only ADMIN and MANAGER see the inventory management view.
+  if (!isAdminOrManager) {
     return (
       <div className="flex gap-10 xl:gap-16">
         {/* ── Left Filter Sidebar ── */}
@@ -784,7 +790,7 @@ const ProductsPage = () => {
                                   message: `${product.name} added to cart`,
                                 });
                               }}
-                              className="w-full gradient-primary rounded-full px-4 py-3 text-[10px] font-bold tracking-widest uppercase shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                              className="w-full bg-slate-900 text-white backdrop-blur-md rounded-full px-4 py-3 text-[10px] font-bold tracking-widest uppercase shadow-xl hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                             >
                               <span className="material-symbols-outlined text-sm">
                                 shopping_cart

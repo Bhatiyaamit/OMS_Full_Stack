@@ -8,6 +8,7 @@ const {
   deleteProduct,
 } = require("../controllers/productController");
 const { protect } = require("../middleware/authMiddleware");
+const { optionalProtect } = require("../middleware/optionalAuthMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
 const { upload } = require("../services/uploadService");
 
@@ -96,7 +97,8 @@ const { upload } = require("../services/uploadService");
  *                     totalPages:
  *                       type: integer
  */
-router.get("/", protect, getAllProducts);
+// Public — guests can browse products (no auth required)
+router.get("/", optionalProtect, getAllProducts);
 
 /**
  * @swagger
@@ -119,7 +121,8 @@ router.get("/", protect, getAllProducts);
  *       404:
  *         description: Product not found
  */
-router.get("/:id", protect, getProductById);
+// Public — guests can view individual products
+router.get("/:id", optionalProtect, getProductById);
 
 /**
  * @swagger

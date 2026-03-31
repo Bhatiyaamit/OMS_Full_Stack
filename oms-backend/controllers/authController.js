@@ -4,6 +4,7 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const generateToken = require("../utils/generateToken");
 const { registerSchema, loginSchema } = require("../validators/auth.schema");
+const { uploadToCloudinary } = require("../services/uploadService");
 
 // POST /api/auth/register
 const register = asyncHandler(async (req, res) => {
@@ -53,14 +54,65 @@ const login = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      avatar: user.avatar,
     },
   });
 });
 
 // GET /api/auth/me
 const getMe = asyncHandler(async (req, res) => {
-  res.json({ success: true, data: req.user });
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      phone: true,
+      avatar: true,
+      address: true,
+      city: true,
+      state: true,
+      pincode: true,
+      createdAt: true,
+    },
+  });
+  res.json({ success: true, data: user });
 });
+
+// PUT /api/auth/profile
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name, phone, address, city, state, pincode } = req.body;
+
+  let avatarUrl = undefined;
+
+  // If new avatar image uploaded via Multer + Cloudinary
+  if (req.file) {
+    avatarUrl = await uploadToCloudinary(req.file.path, 'oms/avatars');
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: req.user.id },
+    data: {
+      ...(name    && { name }),
+      ...(phone   && { phone }),
+      ...(address && { address }),
+      ...(city    && { city }),
+      ...(state   && { state }),
+      ...(pincode && { pincode }),
+      ...(avatarUrl !== undefined && { avatar: avatarUrl }),
+    },
+    select: {
+      id: true, name: true, email: true,
+      role: true, phone: true, avatar: true,
+      address: true, city: true, state: true, pincode: true,
+    },
+  });
+
+  res.json({ success: true, data: updated });
+});
+
+
 
 // POST /api/auth/logout
 const logout = asyncHandler(async (req, res) => {
@@ -72,4 +124,4 @@ const logout = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Logged out successfully" });
 });
 
-module.exports = { register, login, getMe, logout };
+module.exports = { register, login, getMe, logout, updateProfile };

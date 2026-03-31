@@ -5,9 +5,10 @@ const {
   login,
   getMe,
   logout,
+  updateProfile,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
-
+const { upload } = require("../services/uploadService");
 /**
  * @swagger
  * tags:
@@ -33,6 +34,18 @@ const { protect } = require("../middleware/authMiddleware");
  *         role:
  *           type: string
  *           enum: [ADMIN, MANAGER, CUSTOMER]
+ *         phone:
+ *           type: string
+ *         avatar:
+ *           type: string
+ *         address:
+ *           type: string
+ *         city:
+ *           type: string
+ *         state:
+ *           type: string
+ *         pincode:
+ *           type: string
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -148,5 +161,54 @@ router.get("/me", protect, getMe);
  *         description: Not authenticated
  */
 router.post("/logout", protect, logout);
+
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               state:
+ *                 type: string
+ *               pincode:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *                 description: User profile image
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ */
+router.put("/profile", protect, upload.single("avatar"), updateProfile);
 
 module.exports = router;

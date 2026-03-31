@@ -13,6 +13,12 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(CUSTOMER)
+  phone     String?
+  avatar    String?
+  address   String?
+  city      String?
+  state     String?
+  pincode   String?
   orders    Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

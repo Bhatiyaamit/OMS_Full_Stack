@@ -39,14 +39,14 @@ const CartDrawer = ({ open, onClose }) => {
       setAuthModalOpen(true);
     } else {
       onClose();
-      navigate("/checkout");
+      navigate("/cart");
     }
   };
 
   const handleAuthSuccess = () => {
     setAuthModalOpen(false);
     onClose();
-    navigate("/checkout");
+    navigate("/cart");
   };
 
   return (

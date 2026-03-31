@@ -38,6 +38,31 @@ const inputCls = (hasError) =>
       : "border-slate-200 focus:ring-slate-200 bg-slate-50 focus:bg-white"
   }`;
 
+const PasswordField = ({ label, error, registration, placeholder = "••••••••" }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <Field label={label} error={error}>
+      <div className="relative">
+        <input
+          {...registration}
+          type={show ? "text" : "password"}
+          placeholder={placeholder}
+          className={inputCls(!!error) + " pr-12"}
+        />
+        <button
+          type="button"
+          onClick={() => setShow(!show)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors outline-none flex items-center justify-center"
+        >
+          <span className="material-symbols-outlined text-[18px]">
+            {show ? "visibility_off" : "visibility"}
+          </span>
+        </button>
+      </div>
+    </Field>
+  );
+};
+
 /* ══════════════════════════════════════════════════════════
  *  CheckoutAuthModal
  *
@@ -47,7 +72,7 @@ const inputCls = (hasError) =>
  *    onSuccess   () => void  — called after login/signup + merge
  *    onContinueAsGuest (optional) — if you want a "guest checkout" escape hatch
  * ══════════════════════════════════════════════════════════ */
-const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
+const CheckoutAuthModal = ({ open, onClose, onSuccess, mode = "checkout" }) => {
   const [tab, setTab] = useState("login"); // "login" | "signup"
 
   /* TanStack Query mutations — same ones as LoginPage / RegisterPage */
@@ -110,7 +135,7 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
       onCancel={onClose}
       footer={null}
       centered
-      width={440}
+      width={480}
       closable
       maskClosable
       styles={{
@@ -120,13 +145,10 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
     >
       <div className="flex flex-col">
 
-        {/* ── Top accent bar ── */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-[#C8F04A] via-slate-900 to-slate-700" />
-
         {/* ── Header ── */}
         <div className="px-8 pt-7 pb-5 border-b border-slate-100">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[#C8F04A] text-lg"
                 style={{ fontVariationSettings: "'FILL' 1" }}>
                 shopping_cart_checkout
@@ -134,10 +156,14 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
             </div>
             <div>
               <h2 className="text-lg font-black text-slate-900 leading-tight tracking-tight">
-                {tab === "login" ? "Sign in to checkout" : "Create an account"}
+                {tab === "login" 
+                  ? (mode === "checkout" ? "Sign in to checkout" : "Welcome back") 
+                  : "Create an account"}
               </h2>
               <p className="text-xs text-slate-400 font-medium">
-                Your cart items will be saved automatically
+                {mode === "checkout" 
+                  ? "Your cart items will be saved automatically" 
+                  : "Access your dashboard, orders, and more"}
               </p>
             </div>
           </div>
@@ -175,14 +201,12 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
                   className={inputCls(!!loginForm.formState.errors.email)}
                 />
               </Field>
-              <Field label="Password" error={loginForm.formState.errors.password?.message}>
-                <input
-                  {...loginForm.register("password")}
-                  type="password"
-                  placeholder="••••••••"
-                  className={inputCls(!!loginForm.formState.errors.password)}
-                />
-              </Field>
+              <PasswordField 
+                label="Password" 
+                error={loginForm.formState.errors.password?.message} 
+                registration={loginForm.register("password")}
+                placeholder="••••••••"
+              />
               <button
                 type="submit"
                 disabled={loading}
@@ -193,7 +217,7 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
                 ) : (
                   <span className="material-symbols-outlined text-base">login</span>
                 )}
-                {loading ? "Signing in…" : "Sign In & Continue"}
+                {loading ? "Signing in…" : (mode === "checkout" ? "Sign In & Continue" : "Sign In")}
               </button>
             </form>
           ) : (
@@ -214,14 +238,12 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
                   className={inputCls(!!signupForm.formState.errors.email)}
                 />
               </Field>
-              <Field label="Password" error={signupForm.formState.errors.password?.message}>
-                <input
-                  {...signupForm.register("password")}
-                  type="password"
-                  placeholder="Min. 6 characters"
-                  className={inputCls(!!signupForm.formState.errors.password)}
-                />
-              </Field>
+              <PasswordField 
+                label="Password" 
+                error={signupForm.formState.errors.password?.message} 
+                registration={signupForm.register("password")}
+                placeholder="Min. 6 characters"
+              />
               <button
                 type="submit"
                 disabled={loading}
@@ -232,7 +254,7 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
                 ) : (
                   <span className="material-symbols-outlined text-base">person_add</span>
                 )}
-                {loading ? "Creating account…" : "Create Account & Continue"}
+                {loading ? "Creating account…" : (mode === "checkout" ? "Create Account & Continue" : "Create Account")}
               </button>
             </form>
           )}
@@ -243,7 +265,7 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess }) => {
           <p className="text-[11px] text-slate-400 font-medium">
             <span className="material-symbols-outlined text-[13px] align-middle mr-1"
               style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-            Your cart is saved · No spam · Cancel anytime
+            {mode === "checkout" ? "Your cart is saved · No spam · Cancel anytime" : "Secure login · No spam · Cancel anytime"}
           </p>
         </div>
       </div>

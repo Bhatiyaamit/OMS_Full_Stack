@@ -35,14 +35,18 @@ axiosInstance.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401) {
-      // Cookie expired or token invalid — force logout
+      // Cookie expired or token invalid — clear local auth state
       const { clearAuth } = useAuthStore.getState();
       clearAuth();
-      // Only redirect if not already on login/register
-      if (
-        !window.location.pathname.includes("/login") &&
-        !window.location.pathname.includes("/register")
-      ) {
+
+      // Public routes that guests are allowed to visit — do NOT redirect
+      const publicPaths = ["/dashboard", "/products", "/cart", "/login", "/register"];
+      const isPublicPage = publicPaths.some((p) =>
+        window.location.pathname.startsWith(p)
+      );
+
+      // Only hard-redirect to /login when the user is on a private page
+      if (!isPublicPage) {
         window.location.href = "/login";
       }
     }

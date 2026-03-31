@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import { useLogout } from "../../hooks/useAuth";
 import CartIcon from "../cart/CartIcon";
+import CheckoutAuthModal from "../cart/CheckoutAuthModal";
+
+const getImageUrl = (image) => {
+  if (!image) return null;
+  if (image.startsWith("http")) return image;
+  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+};
 
 const CustomerLayout = () => {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const logoutMutation = useLogout();
@@ -30,16 +39,25 @@ const CustomerLayout = () => {
             >
               Shop
             </NavLink>
-            <NavLink 
-              to="/orders"
-              className={({ isActive }) => 
-                `font-bold font-sans text-sm tracking-tight transition-all duration-300 px-3 py-1 rounded-full ${
-                  isActive ? "text-primary bg-primary/10" : "text-slate-600 hover:bg-white/40"
-                }`
-              }
-            >
-              My Orders
-            </NavLink>
+            {user ? (
+              <NavLink 
+                to="/orders"
+                className={({ isActive }) => 
+                  `font-bold font-sans text-sm tracking-tight transition-all duration-300 px-3 py-1 rounded-full ${
+                    isActive ? "text-primary bg-primary/10" : "text-slate-600 hover:bg-white/40"
+                  }`
+                }
+              >
+                My Orders
+              </NavLink>
+            ) : (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="font-bold font-sans text-sm tracking-tight transition-all duration-300 px-3 py-1 rounded-full text-slate-600 hover:bg-white/40"
+              >
+                My Orders
+              </button>
+            )}
           </div>
         </div>
 
@@ -60,23 +78,47 @@ const CustomerLayout = () => {
           {/* Cart Icon — opens drawer, works for guests too */}
           <CartIcon />
           
-          <div className="flex items-center gap-3 ml-2 pl-4 border-l border-outline-variant/30 relative group cursor-pointer">
-            <span className="text-sm font-semibold text-on-surface truncate max-w-[100px]">{user?.name}</span>
-            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold border-2 border-white shadow-sm">
-              {user?.name?.charAt(0).toUpperCase()}
+          {user ? (
+            <div className="flex items-center gap-3 ml-2 pl-4 border-l border-outline-variant/30 relative group cursor-pointer">
+              <span className="text-sm font-semibold text-on-surface truncate max-w-[100px]">{user.name}</span>
+              <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold border-2 border-white shadow-sm overflow-hidden">
+                {user.avatar ? (
+                  <img src={getImageUrl(user.avatar)} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
+              </div>
+              {/* Hover Dropdown Menu */}
+              <div className="absolute top-12 right-0 w-40 bg-surface-container-lowest rounded-md shadow-soft opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2 flex flex-col gap-1 z-50">
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="w-full text-left px-4 py-2 text-sm text-on-surface font-semibold hover:bg-surface-container-low rounded-lg flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">person</span>
+                  Profile
+                </button>
+                <div className="h-px w-full bg-surface-container my-0.5" />
+                <button
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                  className="w-full text-left px-4 py-2 text-sm text-error font-semibold hover:bg-error/10 rounded-lg flex items-center gap-2 disabled:opacity-60"
+                >
+                  <span className="material-symbols-outlined text-sm">logout</span>
+                  {logoutMutation.isPending ? "Signing out…" : "Logout"}
+                </button>
+              </div>
             </div>
-            {/* Hover Logout Menu */}
-            <div className="absolute top-12 right-0 w-36 bg-surface-container-lowest rounded-xl shadow-soft opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2">
+          ) : (
+            <div className="ml-2 pl-4 border-l border-outline-variant/30">
               <button
-                onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
-                className="w-full text-left px-4 py-2 text-sm text-error font-semibold hover:bg-error/10 rounded-lg flex items-center gap-2 disabled:opacity-60"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="bg-slate-900 text-white rounded-full px-5 py-2.5 font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors flex items-center gap-2 shadow-lg shadow-slate-900/10"
               >
-                <span className="material-symbols-outlined text-sm">logout</span>
-                {logoutMutation.isPending ? "Signing out…" : "Logout"}
+                <span className="material-symbols-outlined text-sm">person</span>
+                Login
               </button>
             </div>
-          </div>
+          )}
         </div>
       </nav>
 
@@ -101,6 +143,14 @@ const CustomerLayout = () => {
           </div>
         </div>
       </footer>
+
+      {/* General Auth Modal for Guests */}
+      <CheckoutAuthModal
+        open={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        mode="general"
+        onSuccess={() => setIsAuthModalOpen(false)}
+      />
     </div>
   );
 };
