@@ -1,17 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orderApi } from "../api/orderApi";
 
-export const useMyOrders = () => {
+export const useMyOrders = (query = {}) => {
   return useQuery({
-    queryKey: ["myOrders"],
-    queryFn: orderApi.getMyOrders,
+    queryKey: ["myOrders", query],
+    queryFn: () => orderApi.getMyOrders(query),
   });
 };
 
-export const useAllOrders = () => {
+export const useAllOrders = (query = {}) => {
   return useQuery({
-    queryKey: ["allOrders"],
-    queryFn: orderApi.getAllOrders,
+    queryKey: ["allOrders", query],
+    queryFn: () => orderApi.getAllOrders(query),
   });
 };
 

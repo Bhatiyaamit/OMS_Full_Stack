@@ -7,7 +7,16 @@ import {
   useOrder,
 } from "../hooks/useOrders";
 import useAuthStore from "../store/authStore";
-import { notification, Spin, Drawer, Divider, Modal, Steps } from "antd";
+import {
+  notification,
+  Spin,
+  Drawer,
+  Divider,
+  Modal,
+  Steps,
+  Pagination,
+  Avatar,
+} from "antd";
 import { useNavigate } from "react-router-dom";
 
 /* ── Status config ── */
@@ -70,31 +79,67 @@ const OrderStepper = ({ status }) => {
   if (status === "CANCELLED" || status === "DELIVERED") return null;
   const currentIdx = STEPPER_STEPS.indexOf(status);
 
+  const stepsConfig = [
+    { key: "PENDING", label: "Pending", icon: "hourglass_empty" },
+    { key: "CONFIRMED", label: "Confirmed", icon: "verified" },
+    { key: "SHIPPED", label: "Shipped", icon: "local_shipping" },
+    { key: "DELIVERED", label: "Delivered", icon: "inventory" },
+  ];
+
   return (
-    <div className="w-full pt-2 custom-antd-steps">
-      <Steps
-        size="small"
-        current={currentIdx}
-        labelPlacement="vertical"
-        items={[
-          {
-            title: <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Pending</span>,
-            icon: <div className="flex items-center justify-center pt-0.5"><span className="material-symbols-outlined text-[16px]">hourglass_empty</span></div>,
-          },
-          {
-            title: <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Confirmed</span>,
-            icon: <div className="flex items-center justify-center pt-0.5"><span className="material-symbols-outlined text-[16px]">check_circle</span></div>,
-          },
-          {
-            title: <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Shipped</span>,
-            icon: <div className="flex items-center justify-center pt-0.5"><span className="material-symbols-outlined text-[16px]">local_shipping</span></div>,
-          },
-          {
-            title: <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Delivered</span>,
-            icon: <div className="flex items-center justify-center pt-0.5"><span className="material-symbols-outlined text-[16px]">package_2</span></div>,
-          },
-        ]}
-      />
+    <div className="w-full pt-2 pb-2">
+      <div className="flex items-center justify-between relative">
+        {/* Connecting Lines */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-[12.5%] right-[12.5%] h-0.5 z-0">
+          {/* Background track */}
+          <div className="w-full h-full bg-surface-container-high absolute top-0 left-0" />
+          {/* Active filled track */}
+          <div
+            className="absolute top-0 left-0 h-full bg-primary transition-all duration-500"
+            style={{
+              width: `${(currentIdx / (stepsConfig.length - 1)) * 100}%`,
+            }}
+          />
+        </div>
+
+        {stepsConfig.map((step, idx) => {
+          const isCompleted = idx < currentIdx;
+          const isCurrent = idx === currentIdx;
+          const isFuture = idx > currentIdx;
+
+          return (
+            <div
+              key={step.key}
+              className="flex flex-col items-center relative z-10 w-1/4"
+            >
+              <div className="relative flex items-center justify-center shrink-0 bg-white rounded-full">
+                {isCompleted && (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm">
+                    <span className="material-symbols-outlined text-white text-[14px]">
+                      {step.icon}
+                    </span>
+                  </div>
+                )}
+                {isCurrent && (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center relative shadow-sm">
+                    <span className="material-symbols-outlined text-white text-[14px]">
+                      {step.icon}
+                    </span>
+                    <div className="absolute inset-0 rounded-full ring-4 ring-primary/20 animate-pulse" />
+                  </div>
+                )}
+                {isFuture && (
+                  <div className="w-8 h-8 rounded-full border-2 border-surface-container-high flex items-center justify-center bg-white">
+                    <span className="material-symbols-outlined text-outline-variant text-[14px]">
+                      {step.icon}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -107,23 +152,36 @@ const OrdersPage = () => {
   const navigate = useNavigate();
   const adminView = user?.role === "ADMIN" || user?.role === "MANAGER";
 
-  const {
-    data: allOrdersData,
-    isLoading: loadingAll,
-    refetch: refetchAll,
-  } = useAllOrders();
-  const {
-    data: myOrdersData,
-    isLoading: loadingMy,
-    refetch: refetchMy,
-  } = useMyOrders();
-  const { mutate: updateStatus, isPending: updating } = useUpdateOrderStatus();
-  const { mutate: cancelOrder, isPending: cancelling } = useCancelOrder();
-
   const [activeTab, setActiveTab] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [detailOrderId, setDetailOrderId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const statusParam = adminView ? activeTab : filterStatus;
+  const queryParams = {
+    page: currentPage,
+    limit: pageSize,
+    ...(statusParam !== "ALL" && { status: statusParam }),
+  };
+
+  const {
+    data: allOrdersData,
+    isLoading: loadingAll,
+    refetch: refetchAll,
+  } = useAllOrders(adminView ? queryParams : {});
+
+  const {
+    data: myOrdersData,
+    isLoading: loadingMy,
+    refetch: refetchMy,
+  } = useMyOrders(!adminView ? queryParams : {});
+
+  const { mutate: updateStatus, isPending: updating } = useUpdateOrderStatus();
+  const { mutate: cancelOrder, isPending: cancelling } = useCancelOrder();
 
   const { data: detailData, isLoading: loadingDetail } =
     useOrder(detailOrderId);
@@ -132,6 +190,19 @@ const OrdersPage = () => {
   const loading = adminView ? loadingAll : loadingMy;
   const rawOrders = adminView ? allOrdersData?.data : myOrdersData?.data;
   const orders = rawOrders || [];
+  const paginationInfo = adminView
+    ? allOrdersData?.pagination
+    : myOrdersData?.pagination;
+
+  // Change handlers to reset page when filtering
+  const handleFilterChange = (status) => {
+    setFilterStatus(status);
+    setCurrentPage(1);
+  };
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
 
   const handleUpdateStatus = (orderId, newStatus) => {
     updateStatus(
@@ -211,11 +282,12 @@ const OrdersPage = () => {
               </div>
               <StatusBadge status={detailOrder.status} />
             </div>
-            {detailOrder.status !== "CANCELLED" && detailOrder.status !== "DELIVERED" && (
-              <div className="mt-6">
-                <OrderStepper status={detailOrder.status} />
-              </div>
-            )}
+            {detailOrder.status !== "CANCELLED" &&
+              detailOrder.status !== "DELIVERED" && (
+                <div className="mt-6">
+                  <OrderStepper status={detailOrder.status} />
+                </div>
+              )}
           </div>
 
           {/* Customer (admin only) */}
@@ -358,24 +430,37 @@ const OrdersPage = () => {
       .filter((o) => o.status !== "CANCELLED")
       .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
 
-    const statusFilters = ["ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
+    const statusFilters = [
+      "ALL",
+      "PENDING",
+      "CONFIRMED",
+      "SHIPPED",
+      "DELIVERED",
+      "CANCELLED",
+    ];
 
     return (
       <div className="w-full max-w-[1800px] mx-auto pb-24">
         {/* ── Page header ── */}
-        <header className="mb-8">
+        <header className="mb-3">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">My Orders</h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+              My Orders
+            </h1>
             <button
               onClick={() => navigate("/products")}
               className="flex items-center gap-2 bg-[#C8F04A] text-slate-900 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest shadow hover:scale-105 transition-transform"
             >
-              <span className="material-symbols-outlined text-sm">storefront</span>
+              <span className="material-symbols-outlined text-sm">
+                storefront
+              </span>
               Continue Shopping
             </button>
           </div>
           <p className="text-slate-400 font-medium text-sm">
-            {orders.length > 0 ? `You have placed ${orders.length} orders` : "No orders yet"}
+            {orders.length > 0
+              ? `You have placed ${orders.length} orders`
+              : "No orders yet"}
           </p>
         </header>
 
@@ -383,13 +468,14 @@ const OrdersPage = () => {
 
         {/* ── Two-column layout: Sidebar + Orders list ── */}
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-
           {/* ═══ LEFT SIDEBAR FILTERS ═══ */}
           <aside className="w-full lg:w-72 shrink-0 sticky top-6 self-start">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               {/* Sidebar header */}
               <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50">
-                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">Filter Orders</p>
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                  Filter Orders
+                </p>
               </div>
 
               {/* Filter items */}
@@ -397,14 +483,15 @@ const OrdersPage = () => {
                 {statusFilters.map((s) => {
                   const cfg = STATUS_CONFIG[s] || {};
                   const isActive = filterStatus === s;
-                  const count = s === "ALL"
-                    ? orders.length
-                    : orders.filter((o) => o.status === s).length;
+                  // Due to pagination, we can't reliably count exact unfiltered totals locally unless provided by API. Let's hide exact bubble counts when filtering by status (or just show the current dataset size).
+                  // For simplicity, we just won't show the exact total number of orders in other categories since we only fetched the current 'statusParam' page.
+                  const showCount =
+                    isActive && paginationInfo ? paginationInfo.total : null;
 
                   return (
                     <button
                       key={s}
-                      onClick={() => setFilterStatus(s)}
+                      onClick={() => handleFilterChange(s)}
                       className={`w-full flex items-center justify-between gap-4 px-4 py-3 rounded-xl text-left transition-all ${
                         isActive
                           ? "bg-slate-900 text-white shadow-sm"
@@ -433,15 +520,13 @@ const OrdersPage = () => {
                           {s === "ALL" ? "All Orders" : cfg.label || s}
                         </span>
                       </div>
-                      <span
-                        className={`text-[11px] font-black px-2.5 py-0.5 rounded-full shrink-0 ${
-                          isActive
-                            ? "bg-white/20 text-white"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {count}
-                      </span>
+                      {showCount !== null && (
+                        <span
+                          className={`text-[11px] font-black px-2.5 py-0.5 rounded-full shrink-0 bg-white/20 text-white`}
+                        >
+                          {showCount}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -449,8 +534,12 @@ const OrdersPage = () => {
 
               {/* Sidebar footer — quick spend summary */}
               <div className="px-5 py-4 border-t border-slate-50 bg-slate-50/80">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Total Spent</p>
-                <p className="text-base font-black text-slate-900">₹{totalSpend.toLocaleString()}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                  Total Spent
+                </p>
+                <p className="text-base font-black text-slate-900">
+                  ₹{totalSpend.toLocaleString()}
+                </p>
               </div>
             </div>
           </aside>
@@ -459,10 +548,16 @@ const OrdersPage = () => {
           <div className="flex-1 min-w-0">
             {filteredOrders.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-100 p-16 flex flex-col items-center justify-center text-center shadow-sm">
-                <span className="material-symbols-outlined text-5xl text-slate-200 mb-4">package_2</span>
-                <h3 className="text-xl font-black text-slate-900 mb-2">No orders here</h3>
+                <span className="material-symbols-outlined text-5xl text-slate-200 mb-4">
+                  package_2
+                </span>
+                <h3 className="text-xl font-black text-slate-900 mb-2">
+                  No orders here
+                </h3>
                 <p className="text-slate-400 font-medium text-sm mb-6">
-                  {filterStatus !== "ALL" ? `No ${filterStatus.toLowerCase()} orders found.` : "You haven't placed any orders yet."}
+                  {filterStatus !== "ALL"
+                    ? `No ${filterStatus.toLowerCase()} orders found.`
+                    : "You haven't placed any orders yet."}
                 </p>
                 <button
                   onClick={() => navigate("/products")}
@@ -481,7 +576,9 @@ const OrdersPage = () => {
                     <div
                       key={order.id}
                       className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer group ${
-                        isCancelled ? "border-rose-100 opacity-75" : "border-slate-100 hover:border-slate-200"
+                        isCancelled
+                          ? "border-rose-100 opacity-75"
+                          : "border-slate-100 hover:border-slate-200"
                       }`}
                       onClick={() => navigate(`/order-detail/${order.id}`)}
                     >
@@ -489,83 +586,162 @@ const OrdersPage = () => {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
                           {/* Left: Product Image & Details */}
                           {(() => {
-                            const firstItem = order.items?.[0];
-                            const product = firstItem?.product;
-                            const moreItemsCount = order.items?.length > 1 ? order.items.length - 1 : 0;
+                            const totalItemsCount =
+                              order.items?.reduce(
+                                (acc, i) => acc + i.quantity,
+                                0,
+                              ) || 0;
+                            const uniqueProducts =
+                              order.items?.map((i) => i.product) || [];
+                            const maxToDisplay = 3;
+
                             return (
-                             <div className="flex items-center gap-4">
-                              <div className="w-14 h-14 rounded-2xl bg-slate-50 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200">
-                                {product?.image ? (
-                                  <img 
-                                    src={product.image.startsWith('http') ? product.image : `http://localhost:5011${product.image}`} 
-                                    alt={product.name} 
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="material-symbols-outlined text-slate-300">image</span>
-                                )}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-black text-slate-900 text-sm tracking-tight truncate max-w-37.5 sm:max-w-xs cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); navigate(`/products/${product?.id}`); }}>
-                                    {product?.name || "Unknown Product"}
-                                  </h4>
-                                  {moreItemsCount > 0 && (
-                                    <span className="text-[9px] font-black uppercase text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">
-                                      +{moreItemsCount} items
+                              <div className="flex items-center gap-4">
+                                <Avatar.Group
+                                  size="large"
+                                  maxCount={maxToDisplay}
+                                  maxStyle={{
+                                    color: "#000",
+                                    backgroundColor: "#f1f5f9",
+                                    fontWeight: "bold",
+                                  }}
+                                >
+                                  {uniqueProducts.map((prod, idx) => {
+                                    const imgSrc = prod?.image?.startsWith(
+                                      "http",
+                                    )
+                                      ? prod.image
+                                      : `http://localhost:5011${prod?.image}`;
+                                    return (
+                                      <Avatar
+                                        key={idx}
+                                        src={imgSrc || undefined}
+                                        icon={
+                                          !imgSrc && (
+                                            <span className="material-symbols-outlined">
+                                              image
+                                            </span>
+                                          )
+                                        }
+                                        className="border-2 border-white shadow-sm"
+                                      />
+                                    );
+                                  })}
+                                </Avatar.Group>
+
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4
+                                      className="font-black text-slate-900 text-sm tracking-tight truncate max-w-37.5 sm:max-w-xs cursor-pointer hover:underline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/order-detail/${order.id}`);
+                                      }}
+                                    >
+                                      {totalItemsCount}{" "}
+                                      {totalItemsCount === 1 ? "item" : "items"}
+                                    </h4>
+                                    <StatusBadge status={order.status} />
+                                  </div>
+                                  <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+                                    <span className="font-mono font-bold text-slate-500 uppercase">
+                                      #{order.id.slice(0, 8)}
                                     </span>
-                                  )}
-                                  <StatusBadge status={order.status} />
+                                    <span>&bull;</span>
+                                    <span>
+                                      {new Date(
+                                        order.createdAt,
+                                      ).toLocaleDateString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })}
+                                    </span>
+                                  </p>
                                 </div>
-                                <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
-                                  <span className="font-mono font-bold text-slate-500 uppercase">#{order.id.slice(0, 8)}</span>
-                                  <span>&bull;</span>
-                                  <span>{new Date(order.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                                </p>
                               </div>
-                             </div>
                             );
                           })()}
 
-                          {/* Right: amount + cancel */}
+                          {/* Right: amount */}
                           <div className="flex items-center gap-3 shrink-0">
                             <div className="text-right">
-                              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total</p>
-                              <p className="text-xl font-black text-slate-900 leading-none">₹{parseFloat(order.totalAmount).toLocaleString()}</p>
-                            </div>
-                            {order.status === "PENDING" && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleCancelOrder(order.id); }}
-                                disabled={cancelling}
-                                className="p-2 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                                title="Cancel order"
-                              >
-                                <span className="material-symbols-outlined text-[20px]">cancel</span>
-                              </button>
-                            )}
-                            <div className="p-2 rounded-xl text-slate-300 group-hover:text-slate-600 group-hover:bg-slate-50 transition-colors">
-                              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                Total
+                              </p>
+                              <p className="text-xl font-black text-slate-900 leading-none">
+                                ₹
+                                {parseFloat(order.totalAmount).toLocaleString()}
+                              </p>
                             </div>
                           </div>
                         </div>
 
-                        {/* Compact Stepper */}
+                        {/* Compact Stepper & Action Tools */}
                         {!isCancelled && !isDelivered && (
-                          <div className="border-t border-slate-50 pt-3">
-                            <OrderStepper status={order.status} />
+                          <div className="border-t border-slate-50 pt-2 pb-1 flex flex-row items-center justify-between gap-4">
+                            <div className="w-full max-w-55 sm:max-w-70">
+                              <OrderStepper status={order.status} />
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {order.status === "PENDING" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancelOrder(order.id);
+                                  }}
+                                  disabled={cancelling}
+                                  className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                                  title="Cancel order"
+                                >
+                                  <span className="material-symbols-outlined text-[20px]">
+                                    cancel
+                                  </span>
+                                </button>
+                              )}
+                              <div className="p-2 rounded-xl text-slate-400 group-hover:text-slate-600 group-hover:bg-slate-50 transition-colors">
+                                <span className="material-symbols-outlined text-[22px]">
+                                  chevron_right
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         )}
 
                         {isCancelled && (
                           <div className="border-t border-rose-50 pt-3 flex items-center gap-1.5 text-rose-400">
-                            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>info</span>
-                            <span className="text-[11px] font-bold">This order was cancelled</span>
+                            <span
+                              className="material-symbols-outlined text-sm"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              info
+                            </span>
+                            <span className="text-[11px] font-bold">
+                              This order was cancelled
+                            </span>
                           </div>
                         )}
                       </div>
                     </div>
                   );
                 })}
+
+                {/* Pagination */}
+                {paginationInfo && paginationInfo.totalPages > 1 && (
+                  <div className="flex justify-center mt-6 pt-4 pb-4">
+                    <Pagination
+                      current={currentPage}
+                      pageSize={pageSize}
+                      total={paginationInfo.total}
+                      onChange={(page, size) => {
+                        setCurrentPage(page);
+                        setPageSize(size);
+                      }}
+                      showSizeChanger
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -708,12 +884,16 @@ const OrdersPage = () => {
             const cfg = STATUS_CONFIG[tab] || {};
             const count =
               tab === "ALL"
-                ? orders.length
-                : orders.filter((o) => o.status === tab).length;
+                ? tab === filterStatus && paginationInfo
+                  ? paginationInfo.total
+                  : "-"
+                : tab === activeTab && paginationInfo
+                  ? paginationInfo.total
+                  : "-";
             return (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabChange(tab)}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
                   activeTab === tab
                     ? "bg-slate-900 text-white shadow"
@@ -809,9 +989,36 @@ const OrdersPage = () => {
                           {order.user?.email || ""}
                         </p>
                       </td>
-                      <td className="py-4 px-6 text-sm text-slate-500 font-medium">
-                        {order.items?.length || 0} item
-                        {order.items?.length !== 1 ? "s" : ""}
+                      <td className="py-4 px-6 text-[11px] font-bold text-slate-500">
+                        <Avatar.Group size="small" maxCount={2}>
+                          {order.items?.map((item, idx) => {
+                            const imgSrc = item.product?.image?.startsWith(
+                              "http",
+                            )
+                              ? item.product.image
+                              : `http://localhost:5011${item.product?.image}`;
+                            return (
+                              <Avatar
+                                key={idx}
+                                src={imgSrc}
+                                icon={
+                                  !imgSrc && (
+                                    <span className="material-symbols-outlined text-[10px]">
+                                      image
+                                    </span>
+                                  )
+                                }
+                              />
+                            );
+                          })}
+                        </Avatar.Group>
+                        <span className="ml-2">
+                          {order.items?.reduce(
+                            (acc, i) => acc + i.quantity,
+                            0,
+                          ) || 0}{" "}
+                          items
+                        </span>
                       </td>
                       <td className="py-4 px-6">
                         <span className="font-black text-slate-900 text-sm">
@@ -865,12 +1072,32 @@ const OrdersPage = () => {
               </tbody>
             </table>
           )}
+
+          {/* Admin Pagination */}
+          {paginationInfo && paginationInfo.totalPages > 1 && (
+            <div className="flex justify-end mt-4 px-6 pb-6 pt-2">
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={paginationInfo.total}
+                onChange={(page, size) => {
+                  setCurrentPage(page);
+                  setPageSize(size);
+                }}
+                showSizeChanger
+              />
+            </div>
+          )}
         </div>
 
         {/* Summary footer */}
         <div className="px-6 py-4 border-t border-slate-50 flex flex-wrap items-center gap-4 text-xs text-slate-400 font-medium">
           <span>
-            Showing {filteredAdminOrders.length} of {orders.length} orders
+            Showing {filteredAdminOrders.length}{" "}
+            {paginationInfo
+              ? `of ${paginationInfo.total}`
+              : `of ${orders.length}`}{" "}
+            orders
           </span>
           <span>·</span>
           <span className="text-amber-500 font-bold">

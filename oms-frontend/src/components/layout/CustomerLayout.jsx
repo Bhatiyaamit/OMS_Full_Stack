@@ -80,7 +80,7 @@ const CustomerLayout = () => {
           
           {user ? (
             <div className="flex items-center gap-3 ml-2 pl-4 border-l border-outline-variant/30 relative group cursor-pointer">
-              <span className="text-sm font-semibold text-on-surface truncate max-w-[100px]">{user.name}</span>
+              <span className="text-sm font-semibold text-on-surface truncate max-w-25">{user.name}</span>
               <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold border-2 border-white shadow-sm overflow-hidden">
                 {user.avatar ? (
                   <img src={getImageUrl(user.avatar)} alt={user.name} className="w-full h-full object-cover" />
@@ -123,7 +123,7 @@ const CustomerLayout = () => {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full pt-32 pb-24 px-8 max-w-7xl mx-auto">
+      <main className="flex-1 w-full pt-24 pb-24 px-8 max-w-7xl mx-auto">
         <Outlet />
       </main>
 
@@ -133,7 +133,7 @@ const CustomerLayout = () => {
           <div className="space-y-4 text-center md:text-left">
             <span className="text-lg font-bold text-slate-900">nitec.</span>
             <p className="font-sans text-xs uppercase tracking-widest font-semibold text-slate-500">
-              © 2024 nitec. All rights reserved.
+              © 2026 nitec. All rights reserved.
             </p>
           </div>
           <div className="flex items-center gap-12 mt-8 md:mt-0">

@@ -158,9 +158,9 @@ const ProfilePage = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4">
+    <div className="max-w-4xl mx-auto py-2 px-4">
       {/* ── Page Header ── */}
-      <div className="mb-10">
+      <div className="mb-7">
         <h1 className="text-3xl font-bold tracking-tight text-on-surface">
           My Profile
         </h1>

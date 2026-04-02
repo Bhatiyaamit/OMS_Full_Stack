@@ -146,7 +146,7 @@ function App() {
                and also on the backend API)
               ─────────────────────────────────────────── */}
           <Route
-            path="/orders/:id"
+            path="/order-detail/:id"
             element={
               <PrivateRoute>
                 <OrderDetailPage />
