@@ -7,7 +7,8 @@ import {
 } from "../hooks/useProducts";
 import useAuthStore from "../store/authStore";
 import useCartStore from "../store/cartStore";
-import { Modal, notification, Drawer, Spin } from "antd";
+import { Modal, Drawer, Spin } from "antd";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -241,7 +242,7 @@ const ProductsPage = () => {
         { id: editingProduct.id, data: formData },
         {
           onSuccess: () => {
-            notification.success({ message: "Product updated" });
+            toast.success("Product updated");
             closeDrawer();
           },
         },
@@ -249,7 +250,7 @@ const ProductsPage = () => {
     } else {
       createProduct(formData, {
         onSuccess: () => {
-          notification.success({ message: "Product created" });
+          toast.success("Product created");
           closeDrawer();
         },
       });
@@ -268,7 +269,7 @@ const ProductsPage = () => {
         onOk: () => {
           deleteProduct(id, {
             onSuccess: () =>
-              notification.success({ message: "Product deleted" }),
+              toast.success("Product deleted"),
           });
         },
       });
@@ -762,7 +763,7 @@ const ProductsPage = () => {
                             /* Quantity stepper */
                             <div className="flex items-center justify-between bg-white/95 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg border border-outline-variant/10">
                               <button
-                                onClick={() => removeFromCart(product.id)}
+                                onClick={() => removeFromCart(product.id, !!user)}
                                 className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center transition-colors"
                               >
                                 <span className="material-symbols-outlined text-sm text-on-surface">
@@ -773,7 +774,7 @@ const ProductsPage = () => {
                                 {qty}
                               </span>
                               <button
-                                onClick={() => addToCart(product)}
+                                onClick={() => addToCart(product, !!user)}
                                 className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-700 flex items-center justify-center transition-colors"
                               >
                                 <span className="material-symbols-outlined text-sm text-white">
@@ -785,10 +786,8 @@ const ProductsPage = () => {
                             /* Add to Cart */
                             <button
                               onClick={() => {
-                                addToCart(product);
-                                notification.success({
-                                  message: `${product.name} added to cart`,
-                                });
+                                addToCart(product, !!user);
+                                toast.success(`${product.name} added to cart`);
                               }}
                               className="w-full bg-slate-900 text-white backdrop-blur-md rounded-full px-4 py-3 text-[10px] font-bold tracking-widest uppercase shadow-xl hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                             >

@@ -1,5 +1,8 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 import useAuthStore from "./store/authStore";
+import useCartStore from "./store/cartStore";
 
 // ── Layouts ──────────────────────────────────────────────
 import RoleBasedLayout from "./components/layout/RoleBasedLayout";
@@ -8,12 +11,13 @@ import RoleBasedLayout from "./components/layout/RoleBasedLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import OrdersPage from "./pages/OrdersPage";
 import ProductsPage from "./pages/ProductsPage";
 import CartPage from "./pages/CartPage";
-import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import ProfilePage from "./pages/ProfilePage";
+import CheckoutPage from "./pages/CheckoutPage";
 
 // ─────────────────────────────────────────────────────────
 //  ROUTE GUARDS
@@ -62,8 +66,20 @@ const AuthRoute = ({ children }) => {
 // ─────────────────────────────────────────────────────────
 
 function App() {
+  const { user } = useAuthStore();
+  const hydrateFromServer = useCartStore((s) => s.hydrateFromServer);
+
+  // On page load — if user is already logged in, pull their cart from DB
+  useEffect(() => {
+    if (user) {
+      hydrateFromServer();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <BrowserRouter>
+      <Toaster position="bottom-left" richColors />
       <Routes>
         {/* ════════════════════════════════════════════════
             AUTH PAGES — no layout shell, full screen pages
@@ -122,6 +138,20 @@ function App() {
                   → Cart data stays intact in Zustand
               ─────────────────────────────────────────── */}
           <Route path="/cart" element={<CartPage />} />
+
+          {/*
+            /checkout — PrivateRoute, customer only.
+            User must be logged in to reach payment page.
+            State passed from CartPage via navigate().
+          */}
+          <Route
+            path="/checkout"
+            element={
+              <PrivateRoute>
+                <CheckoutPage />
+              </PrivateRoute>
+            }
+          />
 
           {/* ── /orders ─────────────────────────────────
               PRIVATE — must be logged in.

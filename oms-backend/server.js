@@ -9,6 +9,7 @@ const swaggerSpec = require("./config/swagger");
 const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
 const orderRoutes = require("./routes/order.routes");
+const cartRoutes = require("./routes/cart.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -20,6 +21,12 @@ app.use(
     credentials: true, // required for cookies
   }),
 );
+// ── Stripe Webhook (Must be before express.json) ───────
+app.use(
+  "/api/orders/webhook",
+  express.raw({ type: "application/json" })
+);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
@@ -28,6 +35,7 @@ app.use(morgan("dev"));
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/cart", cartRoutes);
 
 // ── Swagger docs ──────────────────────────────────────
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

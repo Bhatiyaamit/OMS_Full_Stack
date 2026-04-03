@@ -1,7 +1,8 @@
 import React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Spin, Modal, notification } from "antd";
+import { Spin, Modal } from "antd";
+import { toast } from "sonner";
 import api from "../api/axiosInstance";
 
 const getImageUrl = (image) => {
@@ -83,11 +84,11 @@ const OrderDetailPage = () => {
       onOk: () => {
         api.delete(`/orders/${id}`)
           .then(() => {
-            notification.success({ message: "Order successfully cancelled" });
+            toast.success("Order successfully cancelled");
             navigate("/orders");
           })
           .catch((err) => {
-            notification.error({ message: err.response?.data?.message || "Failed to cancel order" });
+            toast.error(err.response?.data?.message || "Failed to cancel order");
           });
       },
     });

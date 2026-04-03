@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLogin } from "../hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
-import { notification } from "antd";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -25,14 +25,12 @@ const LoginPage = () => {
   const onSubmit = (data) => {
     login(data, {
       onSuccess: () => {
-        notification.success({ message: "Welcome back!", placement: "top" });
+        toast.success("Welcome back!");
         navigate("/dashboard");
       },
       onError: (err) => {
-        notification.error({
-          message: "Authentication failed",
+        toast.error("Authentication failed", {
           description: err?.message || "Invalid credentials",
-          placement: "top",
         });
       },
     });

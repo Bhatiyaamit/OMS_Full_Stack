@@ -1,9 +1,9 @@
 import { useState } from "react";
 import useCartStore from "../store/cartStore";
 import useAuthStore from "../store/authStore";
-import { usePlaceOrder } from "../hooks/useOrders";
 import { useNavigate, Link } from "react-router-dom";
-import { notification, Modal, Spin } from "antd";
+import { Modal, Spin } from "antd";
+import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api/axiosInstance";
 import CheckoutAuthModal from "../components/cart/CheckoutAuthModal";
@@ -27,7 +27,6 @@ const CartPage = () => {
   const addressComplete =
     profile?.address && profile?.city && profile?.state && profile?.pincode;
 
-  const { mutate: placeOrder, isPending } = usePlaceOrder();
   const navigate = useNavigate();
 
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
@@ -46,54 +45,62 @@ const CartPage = () => {
     return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
   };
 
-  const proceedToOrder = () => {
-    Modal.confirm({
-      title: "Place Order",
-      content: `Confirm order of ${totalItems} item(s) for ₹${orderTotal.toLocaleString()}?`,
-      okText: "Place Order",
-      cancelText: "Cancel",
-      onOk: () => {
-        const orderPayload = {
-          items: items.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-          })),
-        };
-        placeOrder(orderPayload, {
-          onSuccess: (res) => {
-            clearCart();
-            notification.success({ message: "Order placed successfully!" });
-            navigate(`/order-success/${res.data.id}`);
-          },
-          onError: (err) => {
-            notification.error({
-              message: "Order failed",
-              description:
-                err?.response?.data?.message ||
-                err?.message ||
-                "Please try again",
-            });
-          },
-        });
-      },
-    });
-  };
+  const [initiatingPayment, setInitiatingPayment] = useState(false);
 
-  const handleCheckout = () => {
-    if (items.length === 0) return;
-
-    if (isGuest) {
+  const handleConfirmOrder = async () => {
+    // Guest check — show login modal
+    if (!user) {
+      toast.info("Please sign in to continue");
       setAuthModalOpen(true);
       return;
     }
 
+    // Address check
     if (!addressComplete) {
-      notification.warning({ message: "Please add a delivery address first." });
+      toast.warning("Delivery address required", {
+        description: "Please add your delivery address in Profile first.",
+      });
       navigate("/profile");
       return;
     }
 
-    proceedToOrder();
+    // Cart check
+    if (items.length === 0) {
+      toast.warning("Your cart is empty");
+      return;
+    }
+
+    try {
+      setInitiatingPayment(true);
+
+      const res = await api.post("/orders/create-payment-intent", {
+        items: items.map((i) => ({
+          productId: i.id,
+          quantity:  i.quantity,
+        })),
+      });
+
+      const { clientSecret, paymentIntentId, totalAmount } = res;
+
+      // Navigate to checkout with everything needed
+      navigate("/checkout", {
+        state: {
+          clientSecret,
+          paymentIntentId,
+          totalAmount,
+          items: items.map((i) => ({
+            productId: i.id,
+            quantity:  i.quantity,
+          })),
+        },
+      });
+    } catch (err) {
+      toast.error("Could not initiate payment", {
+        description: err?.response?.data?.message || err?.message || "Please try again.",
+      });
+    } finally {
+      setInitiatingPayment(false);
+    }
   };
 
   return (
@@ -110,7 +117,7 @@ const CartPage = () => {
         </div>
         {items.length > 0 && (
           <button
-            onClick={clearCart}
+            onClick={() => clearCart(!isGuest)}
             className="text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-error flex items-center gap-1.5 transition-colors"
           >
             <span className="material-symbols-outlined text-sm">
@@ -197,7 +204,7 @@ const CartPage = () => {
                     {/* Quantity Stepper */}
                     <div className="flex items-center gap-3 bg-surface-container-low rounded-full px-2 py-1">
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(item.id, !isGuest)}
                         className="w-8 h-8 rounded-full bg-surface-container-lowest hover:bg-surface-container flex items-center justify-center text-on-surface font-bold transition-colors active:scale-90"
                       >
                         <span className="material-symbols-outlined text-sm">
@@ -208,7 +215,7 @@ const CartPage = () => {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => addItem(item)}
+                        onClick={() => addItem(item, !isGuest)}
                         disabled={item.quantity >= item.stock}
                         className="w-8 h-8 rounded-full bg-surface-container-lowest hover:bg-surface-container flex items-center justify-center text-on-surface font-bold transition-colors active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
@@ -220,7 +227,7 @@ const CartPage = () => {
 
                     {/* Remove Button — icon only, visible on hover */}
                     <button
-                      onClick={() => deleteItem(item.id)}
+                      onClick={() => deleteItem(item.id, !isGuest)}
                       className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-red-50 hover:text-error transition-colors opacity-0 group-hover:opacity-100"
                       title="Remove item"
                     >
@@ -328,18 +335,32 @@ const CartPage = () => {
 
               {/* Confirm Order Button */}
               <button
-                onClick={handleCheckout}
-                disabled={isPending || (!!user && !addressComplete)}
-                className="w-full mt-6 bg-primary text-on-primary py-4 rounded-full font-semibold text-sm hover:bg-primary-dim transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+                onClick={handleConfirmOrder}
+                disabled={
+                  initiatingPayment ||
+                  items.length === 0 ||
+                  (user && !addressComplete)
+                }
+                className="w-full mt-6 bg-primary text-on-primary py-4
+                  rounded-full font-semibold text-sm hover:bg-primary-dim
+                  transition-all active:scale-[0.98] shadow-sm
+                  flex items-center justify-center gap-2
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  disabled:active:scale-100"
               >
-                {isPending ? (
-                  <Spin size="small" />
+                {initiatingPayment ? (
+                  <>
+                    <span className="material-symbols-outlined text-base animate-spin">
+                      progress_activity
+                    </span>
+                    Preparing Payment...
+                  </>
                 ) : (
                   <>
-                    {isGuest ? "Sign in to Checkout" : "Confirm Order"}
-                    <span className="material-symbols-outlined text-sm font-normal">
-                      {isGuest ? "login" : "shopping_cart"}
+                    <span className="material-symbols-outlined text-base">
+                      lock
                     </span>
+                    {isGuest ? "Sign in to Checkout" : "Confirm Order"}
                   </>
                 )}
               </button>
@@ -360,7 +381,8 @@ const CartPage = () => {
           open={isAuthModalOpen}
           onClose={() => setAuthModalOpen(false)}
           onSuccess={() => {
-            proceedToOrder();
+            // Let useEffect or simple re-click handle it, or simulate click
+            handleConfirmOrder();
           }}
         />
       )}

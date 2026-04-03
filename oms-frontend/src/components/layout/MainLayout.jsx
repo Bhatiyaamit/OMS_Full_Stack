@@ -1,7 +1,8 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import { useLogout, useUser } from "../../hooks/useAuth";
-import { Spin, notification } from "antd";
+import { Spin } from "antd";
+import { toast } from "sonner";
 
 /**
  * MainLayout — matches the exact Stitch "Admin Dashboard (Minimal)" sidebar.
@@ -16,7 +17,7 @@ const MainLayout = () => {
   const handleLogout = () => {
     logout(undefined, {
       onSuccess: () => {
-        notification.success({ message: "Logged out successfully", placement: "top" });
+        toast.success("Logged out successfully");
         navigate("/login");
       },
     });

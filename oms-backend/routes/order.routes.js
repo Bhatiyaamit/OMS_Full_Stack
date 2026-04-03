@@ -6,9 +6,18 @@ const {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
+  createPaymentIntent,
+  handleWebhook,
 } = require("../controllers/orderController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
+
+// IMPORTANT: webhook route must come BEFORE any middleware that parses JSON body
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  handleWebhook
+);
 
 /**
  * @swagger
@@ -120,6 +129,22 @@ const { authorize } = require("../middleware/roleMiddleware");
  *         description: Validation error
  */
 router.post("/", protect, authorize("CUSTOMER"), placeOrder);
+
+/**
+ * @swagger
+ * /api/orders/create-payment-intent:
+ *   post:
+ *     summary: Create Stripe Payment Intent (Customer only)
+ *     tags: [Orders]
+ *     security:
+ *       - cookieAuth: []
+ */
+router.post(
+  "/create-payment-intent",
+  protect,
+  authorize("CUSTOMER"),
+  createPaymentIntent
+);
 
 /**
  * @swagger

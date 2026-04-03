@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { notification, Spin } from "antd";
+import { Spin } from "antd";
+import { toast } from "sonner";
 import useAuthStore from "../store/authStore";
 import api from "../api/axiosInstance";
 
@@ -97,15 +98,14 @@ const ProfilePage = () => {
     onSuccess: (updated) => {
       setUser(updated);
       queryClient.invalidateQueries(["profile"]);
-      notification.success({
-        message: "Profile updated",
+      toast.success("Profile updated", {
         description: "Your changes have been saved.",
       });
       setAvatarFile(null);
       setAvatarPreview(null);
     },
     onError: () => {
-      notification.error({ message: "Failed to update profile" });
+      toast.error("Failed to update profile");
     },
   });
 
@@ -124,7 +124,7 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      notification.error({ message: "Image must be under 5MB" });
+      toast.error("Image must be under 5MB");
       return;
     }
     setAvatarFile(file);

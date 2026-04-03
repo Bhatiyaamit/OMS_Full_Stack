@@ -1,4 +1,5 @@
 const prisma = require("../config/db");
+const stripe = require("../config/stripe");
 const ApiError = require("../utils/ApiError");
 const { sendOrderConfirmation, sendStatusUpdate } = require("./emailService");
 
@@ -11,7 +12,7 @@ const STATUS_FLOW = {
 };
 
 // ── Place order ───────────────────────────────────────────────────────────────
-const placeOrderService = async (userId, items) => {
+const placeOrderService = async (userId, items, stripePaymentId = null) => {
   // 1. Fetch all products in one query
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({
@@ -54,7 +55,8 @@ const placeOrderService = async (userId, items) => {
       data: {
         userId,
         totalAmount,
-        status: "PENDING",
+        status: stripePaymentId ? "CONFIRMED" : "PENDING",
+        stripePaymentId: stripePaymentId || null,
         items: {
           create: items.map((item) => {
             const product = products.find((p) => p.id === item.productId);
@@ -151,4 +153,57 @@ const cancelOrderService = async (orderId, userId) => {
   return cancelled;
 };
 
-module.exports = { placeOrderService, updateStatusService, cancelOrderService };
+// ── Create Payment Intent ──────────────────────────────────────────────────────
+const createPaymentIntentService = async (userId, items) => {
+  // 1. Fetch all products in one query
+  const productIds = items.map((i) => i.productId);
+  const products   = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+  });
+
+  // 2. Validate — every product must exist and have enough stock
+  for (const item of items) {
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) {
+      throw new ApiError(404, `Product ${item.productId} not found`);
+    }
+    if (product.stock < item.quantity) {
+      throw new ApiError(
+        400,
+        `Insufficient stock for "${product.name}". Available: ${product.stock}`
+      );
+    }
+  }
+
+  // 3. Calculate total in rupees
+  const totalAmount = items.reduce((sum, item) => {
+    const product = products.find((p) => p.id === item.productId);
+    return sum + product.price * item.quantity;
+  }, 0);
+
+  // 4. Create Stripe PaymentIntent
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: Math.round(totalAmount * 100),
+    currency: "inr",
+    metadata: {
+      userId,
+      itemCount: items.length.toString(),
+    },
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+
+  return {
+    clientSecret: paymentIntent.client_secret,
+    paymentIntentId: paymentIntent.id,
+    totalAmount,
+  };
+};
+
+module.exports = {
+  placeOrderService,
+  updateStatusService,
+  cancelOrderService,
+  createPaymentIntentService,
+};

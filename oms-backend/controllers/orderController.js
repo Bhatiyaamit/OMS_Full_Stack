@@ -1,10 +1,12 @@
 const prisma = require("../config/db");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
+const stripe = require("../config/stripe");
 const {
   placeOrderService,
   updateStatusService,
   cancelOrderService,
+  createPaymentIntentService,
 } = require("../services/orderService");
 const {
   createOrderSchema,
@@ -16,7 +18,8 @@ const placeOrder = asyncHandler(async (req, res) => {
   const parsed = createOrderSchema.safeParse(req.body);
   if (!parsed.success) throw new ApiError(422, parsed.error.errors[0].message);
 
-  const order = await placeOrderService(req.user.id, parsed.data.items);
+  const { items, stripePaymentId } = parsed.data;
+  const order = await placeOrderService(req.user.id, items, stripePaymentId || null);
 
   res.status(201).json({ success: true, data: order });
 });
@@ -106,10 +109,60 @@ const cancelOrder = asyncHandler(async (req, res) => {
   });
 });
 
+// POST /api/orders/create-payment-intent
+const createPaymentIntent = asyncHandler(async (req, res) => {
+  const parsed = createOrderSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new ApiError(422, parsed.error.errors[0].message);
+  }
+
+  const result = await createPaymentIntentService(
+    req.user.id,
+    parsed.data.items
+  );
+
+  res.json({
+    success: true,
+    clientSecret: result.clientSecret,
+    paymentIntentId: result.paymentIntentId,
+    totalAmount: result.totalAmount,
+  });
+});
+
+// POST /api/orders/webhook
+const handleWebhook = asyncHandler(async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+  }
+
+  // Handle payment_intent.succeeded event
+  if (event.type === "payment_intent.succeeded") {
+    const paymentIntent = event.data.object;
+    const userId = paymentIntent.metadata.userId;
+
+    console.log(
+      `PaymentIntent ${paymentIntent.id} succeeded for user ${userId}`
+    );
+  }
+
+  res.json({ received: true });
+});
+
 module.exports = {
   placeOrder,
   getAllOrders,
   getOrderById,
   updateOrderStatus,
   cancelOrder,
+  createPaymentIntent,
+  handleWebhook,
 };

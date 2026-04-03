@@ -7,8 +7,8 @@ import {
   useOrder,
 } from "../hooks/useOrders";
 import useAuthStore from "../store/authStore";
+import { toast } from "sonner";
 import {
-  notification,
   Spin,
   Drawer,
   Divider,
@@ -209,7 +209,7 @@ const OrdersPage = () => {
       { id: orderId, status: newStatus },
       {
         onSuccess: () => {
-          notification.success({ message: `Order updated to ${newStatus}` });
+          toast.success(`Order updated to ${newStatus}`);
           refetchAll();
         },
       },
@@ -227,11 +227,11 @@ const OrdersPage = () => {
       onOk: () => {
         cancelOrder(orderId, {
           onSuccess: () => {
-            notification.success({ message: "Order cancelled" });
+            toast.success("Order cancelled");
             refetchMy();
           },
           onError: (err) =>
-            notification.error({ message: err?.message || "Failed to cancel" }),
+            toast.error(err?.message || "Failed to cancel"),
         });
       },
     });
@@ -570,158 +570,138 @@ const OrdersPage = () => {
               <div className="space-y-3">
                 {filteredOrders.map((order) => {
                   const isCancelled = order.status === "CANCELLED";
-                  const isDelivered = order.status === "DELIVERED";
 
                   return (
                     <div
                       key={order.id}
-                      className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer group ${
+                      className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer group ${
                         isCancelled
                           ? "border-rose-100 opacity-75"
-                          : "border-slate-100 hover:border-slate-200"
+                          : "border-slate-100 hover:border-slate-300"
                       }`}
                       onClick={() => navigate(`/order-detail/${order.id}`)}
                     >
-                      <div className="p-5 md:p-6">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-                          {/* Left: Product Image & Details */}
-                          {(() => {
-                            const totalItemsCount =
-                              order.items?.reduce(
-                                (acc, i) => acc + i.quantity,
-                                0,
-                              ) || 0;
-                            const uniqueProducts =
-                              order.items?.map((i) => i.product) || [];
-                            const maxToDisplay = 3;
+                      <div 
+                        className="px-4 py-3 md:px-5 flex items-center gap-4" 
+                        style={{ minHeight: 72 }}
+                      >
+                        {/* ── Left Side: Images & Info ── */}
+                        {(() => {
+                          const totalItemsCount =
+                            order.items?.reduce((acc, i) => acc + i.quantity, 0) || 0;
+                          const uniqueProducts =
+                            order.items?.map((i) => i.product) || [];
+                          const maxToDisplay = 3;
+                          const displayItems = uniqueProducts.slice(0, maxToDisplay);
 
-                            return (
-                              <div className="flex items-center gap-4">
-                                <Avatar.Group
-                                  size="large"
-                                  maxCount={maxToDisplay}
-                                  maxStyle={{
-                                    color: "#000",
-                                    backgroundColor: "#f1f5f9",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {uniqueProducts.map((prod, idx) => {
-                                    const imgSrc = prod?.image?.startsWith(
-                                      "http",
-                                    )
-                                      ? prod.image
-                                      : `http://localhost:5011${prod?.image}`;
-                                    return (
-                                      <Avatar
-                                        key={idx}
-                                        src={imgSrc || undefined}
-                                        icon={
-                                          !imgSrc && (
-                                            <span className="material-symbols-outlined">
-                                              image
-                                            </span>
-                                          )
-                                        }
-                                        className="border-2 border-white shadow-sm"
-                                      />
-                                    );
-                                  })}
-                                </Avatar.Group>
-
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4
-                                      className="font-black text-slate-900 text-sm tracking-tight truncate max-w-37.5 sm:max-w-xs cursor-pointer hover:underline"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/order-detail/${order.id}`);
+                          return (
+                            <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                              {/* Rule 3: Fixed width image stack */}
+                              <div style={{ width: 68, flexShrink: 0, position: 'relative', height: 44 }}>
+                                {displayItems.map((prod, idx) => {
+                                  const imgSrc = prod?.image?.startsWith("http")
+                                    ? prod.image
+                                    : prod?.image ? `http://localhost:5011${prod?.image}` : null;
+                                  
+                                  return (
+                                    <div
+                                      key={idx}
+                                      style={{
+                                        position: 'absolute',
+                                        left: idx * 14,
+                                        zIndex: maxToDisplay - idx,
                                       }}
+                                      className="w-11 h-11 rounded-full border-2 border-white shadow-sm flex items-center justify-center bg-slate-50 overflow-hidden"
                                     >
-                                      {totalItemsCount}{" "}
-                                      {totalItemsCount === 1 ? "item" : "items"}
-                                    </h4>
-                                    <StatusBadge status={order.status} />
-                                  </div>
-                                  <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
-                                    <span className="font-mono font-bold text-slate-500 uppercase">
-                                      #{order.id.slice(0, 8)}
-                                    </span>
-                                    <span>&bull;</span>
-                                    <span>
-                                      {new Date(
-                                        order.createdAt,
-                                      ).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                      })}
-                                    </span>
-                                  </p>
-                                </div>
+                                      {imgSrc ? (
+                                        <img src={imgSrc} alt="product" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <span className="material-symbols-outlined text-sm text-slate-400">
+                                          image
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })()}
 
-                          {/* Right: amount */}
-                          <div className="flex items-center gap-3 shrink-0">
-                            <div className="text-right">
-                              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                Total
-                              </p>
-                              <p className="text-xl font-black text-slate-900 leading-none">
-                                ₹
-                                {parseFloat(order.totalAmount).toLocaleString()}
-                              </p>
+                              {/* Rule 4: Badge & Item Count split lines */}
+                              <div className="flex flex-col justify-center flex-1 min-w-0">
+                                {/* Line 1: Order ID + Status */}
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className="font-mono font-bold text-slate-900 uppercase">
+                                    #{order.id.slice(0, 8)}
+                                  </span>
+                                  <StatusBadge status={order.status} />
+                                </div>
+                                
+                                {/* Line 2: N items · Date */}
+                                <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
+                                  <span>{totalItemsCount} {totalItemsCount === 1 ? "item" : "items"}</span>
+                                  <span className="opacity-50">&bull;</span>
+                                  <span>
+                                    {new Date(order.createdAt).toLocaleDateString(
+                                      "en-US",
+                                      { month: "short", day: "numeric", year: "numeric" }
+                                    )}
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* ── Rule 2: Right Column Fixed Width ── */}
+                        <div 
+                          style={{ 
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            minWidth: 160, flexShrink: 0, marginLeft: 'auto' 
+                          }}
+                        >
+                          {/* Price element */}
+                          <span 
+                            style={{ 
+                              minWidth: 90, textAlign: 'right', 
+                              fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap' 
+                            }}
+                            className="text-slate-900"
+                          >
+                            ₹{parseFloat(order.totalAmount).toLocaleString()}
+                          </span>
+
+                          {/* Actions Group */}
+                          <div className="flex items-center gap-1 shrink-0 border-l border-slate-100 pl-3">
+                            {/* Rule 1: Always render cancel button, use opacity to disable */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (order.status === "PENDING" && !cancelling) {
+                                  handleCancelOrder(order.id);
+                                }
+                              }}
+                              disabled={order.status !== "PENDING" || cancelling}
+                              style={{ 
+                                opacity: order.status === "PENDING" ? 1 : 0.3, 
+                                pointerEvents: order.status === "PENDING" ? 'auto' : 'none' 
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                              title="Cancel order"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">
+                                cancel
+                              </span>
+                            </button>
+                            
+                            <div
+                              className="p-1.5 rounded-lg text-slate-400 group-hover:text-slate-900 group-hover:bg-slate-100 transition-colors"
+                              title="View Details"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                chevron_right
+                              </span>
                             </div>
                           </div>
                         </div>
-
-                        {/* Compact Stepper & Action Tools */}
-                        {!isCancelled && !isDelivered && (
-                          <div className="border-t border-slate-50 pt-2 pb-1 flex flex-row items-center justify-between gap-4">
-                            <div className="w-full max-w-55 sm:max-w-70">
-                              <OrderStepper status={order.status} />
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              {order.status === "PENDING" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCancelOrder(order.id);
-                                  }}
-                                  disabled={cancelling}
-                                  className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                                  title="Cancel order"
-                                >
-                                  <span className="material-symbols-outlined text-[20px]">
-                                    cancel
-                                  </span>
-                                </button>
-                              )}
-                              <div className="p-2 rounded-xl text-slate-400 group-hover:text-slate-600 group-hover:bg-slate-50 transition-colors">
-                                <span className="material-symbols-outlined text-[22px]">
-                                  chevron_right
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {isCancelled && (
-                          <div className="border-t border-rose-50 pt-3 flex items-center gap-1.5 text-rose-400">
-                            <span
-                              className="material-symbols-outlined text-sm"
-                              style={{ fontVariationSettings: "'FILL' 1" }}
-                            >
-                              info
-                            </span>
-                            <span className="text-[11px] font-bold">
-                              This order was cancelled
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );

@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRegister } from "../hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
-import { notification } from "antd";
+import { toast } from "sonner";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -26,14 +26,12 @@ const RegisterPage = () => {
   const onSubmit = (data) => {
     registerUser(data, {
       onSuccess: () => {
-        notification.success({ message: "Account created!", placement: "top" });
+        toast.success("Account created!");
         navigate("/dashboard");
       },
       onError: (err) => {
-        notification.error({
-          message: "Registration failed",
+        toast.error("Registration failed", {
           description: err?.message || "Please try again",
-          placement: "top",
         });
       },
     });

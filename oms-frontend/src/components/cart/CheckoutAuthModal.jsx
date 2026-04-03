@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Modal, notification } from "antd";
+import { Modal } from "antd";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -100,12 +101,12 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess, mode = "checkout" }) => {
       {
         onSuccess: () => {
           mergeGuestCart([]);
-          notification.success({ message: "Welcome back! Your cart is ready." });
+          toast.success("Welcome back! Your cart is ready.");
           onSuccess?.();
           onClose();
         },
         onError: (err) => {
-          notification.error({ message: err?.response?.data?.message || "Login failed. Check your credentials." });
+          toast.error(err?.response?.data?.message || "Login failed. Check your credentials.");
         },
       }
     );
@@ -118,12 +119,12 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess, mode = "checkout" }) => {
       {
         onSuccess: () => {
           mergeGuestCart([]);
-          notification.success({ message: "Account created! Your cart items are saved." });
+          toast.success("Account created! Your cart items are saved.");
           onSuccess?.();
           onClose();
         },
         onError: (err) => {
-          notification.error({ message: err?.response?.data?.message || "Signup failed. Please try again." });
+          toast.error(err?.response?.data?.message || "Signup failed. Please try again.");
         },
       }
     );

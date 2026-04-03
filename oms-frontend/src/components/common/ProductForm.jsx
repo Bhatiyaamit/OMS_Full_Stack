@@ -1,7 +1,8 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input, InputNumber, Button, notification, Upload } from "antd";
+import { Input, InputNumber, Button, Upload } from "antd";
+import { toast } from "sonner";
 import { useCreateProduct, useUpdateProduct } from "../../hooks/useProducts";
 import { UploadOutlined } from "@ant-design/icons";
 
@@ -60,19 +61,19 @@ const ProductForm = ({ initialData, onSuccess }) => {
         { id: initialData.id, data: formData },
         {
           onSuccess: () => {
-            notification.success({ message: "Product updated!" });
+            toast.success("Product updated!");
             onSuccess();
           },
-          onError: (err) => notification.error({ message: "Update failed", description: err.message })
+          onError: (err) => toast.error("Update failed", { description: err.message })
         }
       );
     } else {
       createProduct(formData, {
         onSuccess: () => {
-          notification.success({ message: "Product created!" });
+          toast.success("Product created!");
           onSuccess();
         },
-        onError: (err) => notification.error({ message: "Creation failed", description: err.message })
+        onError: (err) => toast.error("Creation failed", { description: err.message })
       });
     }
   };
