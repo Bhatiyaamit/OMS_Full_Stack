@@ -161,16 +161,7 @@ const useCartStore = create(
       /* ── Mark cart as belonging to an authenticated user ── */
       setAuthenticated: () => set({ isGuestCart: false }),
 
-      /* ── Derived helpers ── */
-      get totalItems() {
-        return get().items.reduce((sum, i) => sum + i.quantity, 0);
-      },
-      get totalPrice() {
-        return get().items.reduce(
-          (sum, i) => sum + parseFloat(i.price) * i.quantity,
-          0
-        );
-      },
+
     }),
     {
       name: "shopnest-cart",

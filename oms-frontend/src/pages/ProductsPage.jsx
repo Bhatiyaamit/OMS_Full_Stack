@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   useProducts,
   useDeleteProduct,
@@ -30,13 +30,30 @@ const ProductsPage = () => {
   const addToCart = useCartStore((s) => s.addItem);
   const removeFromCart = useCartStore((s) => s.removeItem);
 
+  // ── Initial load state to prevent unmounting UI ──
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   // ── Filter / sort state ──
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [availabilityFilters, setAvailabilityFilters] = useState([]);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [stockFilter, setStockFilter] = useState("all"); // admin only
+
+  // ── Debounce effect for search ──
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms wait after last keystroke
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // ── Pagination state ──
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // ── Drawer state ──
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -47,10 +64,15 @@ const ProductsPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const { data: productsData, isLoading } = useProducts({ search: searchTerm });
+  const { data: productsData, isLoading } = useProducts({ search: debouncedSearchTerm });
   const { mutate: deleteProduct } = useDeleteProduct();
   const { mutate: createProduct, isPending: creating } = useCreateProduct();
   const { mutate: updateProduct, isPending: updating } = useUpdateProduct();
+
+  // Clear initial load flag once data completes first fetch
+  useEffect(() => {
+    if (!isLoading) setIsInitialLoad(false);
+  }, [isLoading]);
 
   const products = useMemo(() => productsData?.data || [], [productsData]);
 
@@ -159,7 +181,13 @@ const ProductsPage = () => {
     setMinPrice("");
     setMaxPrice("");
     setStockFilter("all");
+    setCurrentPage(1);
   };
+
+  // ── Reset page on filter change ──
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortBy, availabilityFilters, minPrice, maxPrice, stockFilter]);
 
   // ── Availability checkbox toggle ──
   const toggleAvailability = (key) => {
@@ -286,7 +314,7 @@ const ProductsPage = () => {
     return { text: "In Stock", classes: "bg-emerald-100 text-emerald-700" };
   };
 
-  if (isLoading) {
+  if (isLoading && isInitialLoad) {
     return (
       <div className="flex items-center justify-center h-64">
         <Spin size="large" />
@@ -494,13 +522,13 @@ const ProductsPage = () => {
   // Only ADMIN and MANAGER see the inventory management view.
   if (!isAdminOrManager) {
     return (
-      <div className="flex gap-10 xl:gap-16">
+      <div className="flex gap-12 xl:gap-20">
         {/* ── Left Filter Sidebar ── */}
-        <aside className="w-60 xl:w-64 flex-shrink-0 hidden lg:block">
-          <div className="sticky top-32 space-y-10">
+        <aside className="w-64 flex-shrink-0 hidden lg:block">
+          <div className="sticky top-24 space-y-10">
             {/* Search */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase text-outline mb-4">
+              <h3 className="text-[11px] font-extrabold tracking-[0.15em] uppercase text-slate-800 mb-4 border-l-2 border-primary pl-2">
                 Search
               </h3>
               <div className="relative">
@@ -519,7 +547,7 @@ const ProductsPage = () => {
 
             {/* Price Range */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase text-outline mb-4">
+              <h3 className="text-[11px] font-extrabold tracking-[0.15em] uppercase text-slate-800 mb-4 border-l-2 border-primary pl-2">
                 Price Range
               </h3>
               <div className="flex items-center gap-2">
@@ -528,7 +556,7 @@ const ProductsPage = () => {
                   placeholder="Min ₹"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
-                  className="w-full bg-surface-container-low border-none rounded-xl py-2.5 px-3 text-xs focus:ring-1 focus:ring-primary"
+                  className="w-full bg-surface-container-low border-none rounded-full py-2.5 px-4 text-xs focus:ring-1 focus:ring-primary"
                 />
                 <span className="text-outline text-xs flex-shrink-0">—</span>
                 <input
@@ -536,32 +564,15 @@ const ProductsPage = () => {
                   placeholder="Max ₹"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full bg-surface-container-low border-none rounded-xl py-2.5 px-3 text-xs focus:ring-1 focus:ring-primary"
+                  className="w-full bg-surface-container-low border-none rounded-full py-2.5 px-4 text-xs focus:ring-1 focus:ring-primary"
                 />
               </div>
-              {(minPrice || maxPrice) && (
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-                    ₹{minPrice || "0"} – ₹{maxPrice || "∞"}
-                  </span>
-                  <button
-                    onClick={() => {
-                      setMinPrice("");
-                      setMaxPrice("");
-                    }}
-                    className="text-outline hover:text-error transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      close
-                    </span>
-                  </button>
-                </div>
-              )}
+              {/* Filters are now cleared via the pills under the header */}
             </div>
 
             {/* Availability */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase text-outline mb-4">
+              <h3 className="text-[11px] font-extrabold tracking-[0.15em] uppercase text-slate-800 mb-4 border-l-2 border-primary pl-2">
                 Availability
               </h3>
               <div className="space-y-3">
@@ -590,14 +601,20 @@ const ProductsPage = () => {
                       type="checkbox"
                       checked={availabilityFilters.includes(key)}
                       onChange={() => toggleAvailability(key)}
-                      className="w-4 h-4 rounded-sm border-outline-variant text-primary focus:ring-primary/20"
+                      className="w-4 h-4 rounded-sm border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
                     />
-                    <span className="text-sm font-medium text-on-surface-variant group-hover:text-on-surface transition-colors flex-1">
+                    <span className="text-sm font-medium text-on-surface-variant group-hover:text-slate-900 transition-colors flex-1">
                       {label}
                     </span>
-                    <span className="text-[10px] font-bold text-outline bg-surface-container px-2 py-0.5 rounded-full">
-                      {count}
-                    </span>
+                    {count > 0 ? (
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                        {count}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-300 opacity-50 px-2 py-0.5 rounded-full">
+                        0
+                      </span>
+                    )}
                   </label>
                 ))}
               </div>
@@ -605,7 +622,7 @@ const ProductsPage = () => {
 
             {/* Sort By */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase text-outline mb-4">
+              <h3 className="text-[11px] font-extrabold tracking-[0.15em] uppercase text-slate-800 mb-4 border-l-2 border-primary pl-2">
                 Sort By
               </h3>
               <div className="space-y-3">
@@ -614,7 +631,6 @@ const ProductsPage = () => {
                   { value: "price_asc", label: "Price: Low to High" },
                   { value: "price_desc", label: "Price: High to Low" },
                   { value: "name_az", label: "Name: A to Z" },
-                  { value: "stock_high", label: "Stock: High to Low" },
                 ].map(({ value, label }) => (
                   <label
                     key={value}
@@ -650,74 +666,126 @@ const ProductsPage = () => {
 
         {/* ── Product Grid Content ── */}
         <section className="flex-1 w-full min-w-0">
-          <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-surface-container pb-6 gap-4">
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tighter text-on-surface mb-1">
-                Curated Selection
-              </h1>
-              <p className="text-sm font-bold text-outline uppercase tracking-[0.15em]">
-                Showing {displayedProducts.length} of {products.length} products
-              </p>
+          <header className="mb-8 flex flex-col border-b border-slate-100 pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+              <div>
+                <h1 className="text-4xl font-extrabold tracking-tighter text-slate-900 mb-1">
+                  Curated Selection
+                </h1>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.15em]">
+                  Showing {displayedProducts.length} of {products.length} products
+                </p>
+              </div>
+
+              {/* Mobile sort + filter button */}
+              <div className="flex items-center gap-3 lg:hidden">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-slate-50 border-none rounded-full text-xs px-4 py-2 font-semibold text-slate-600 focus:ring-1 focus:ring-primary"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="price_asc">Price ↑</option>
+                  <option value="price_desc">Price ↓</option>
+                  <option value="name_az">Name A–Z</option>
+                </select>
+                <button className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full text-xs font-bold text-slate-600">
+                  <span className="material-symbols-outlined text-sm">
+                    filter_list
+                  </span>
+                  Filter
+                </button>
+              </div>
             </div>
 
-            {/* Mobile sort + filter button */}
-            <div className="flex items-center gap-3 lg:hidden">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-surface-container-low border-none rounded-full text-xs px-4 py-2 font-semibold text-on-surface-variant focus:ring-1 focus:ring-primary"
-              >
-                <option value="newest">Newest First</option>
-                <option value="price_asc">Price ↑</option>
-                <option value="price_desc">Price ↓</option>
-                <option value="name_az">Name A–Z</option>
-                <option value="stock_high">Stock ↓</option>
-              </select>
-              <button className="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant">
-                <span className="material-symbols-outlined text-sm">
-                  filter_list
-                </span>
-                Filter
-              </button>
-            </div>
+            {/* Active Filter Pills Row */}
+            {isAnyFilterActive && (
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-2">Filters:</span>
+                
+                {searchTerm && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                    "{searchTerm}"
+                    <button onClick={() => setSearchTerm("")} className="hover:text-blue-900 transition-colors">
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                )}
+
+                {(minPrice || maxPrice) && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                    Price: ₹{minPrice || "0"} – ₹{maxPrice || "∞"}
+                    <button onClick={() => { setMinPrice(""); setMaxPrice(""); }} className="hover:text-blue-900 transition-colors">
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                )}
+
+                {availabilityFilters.map(f => (
+                  <span key={f} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                    {f === "in_stock" ? "In Stock" : f === "low_stock" ? "Low Stock" : "Out of Stock"}
+                    <button onClick={() => toggleAvailability(f)} className="hover:text-blue-900 transition-colors">
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                ))}
+
+                {sortBy !== "newest" && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                    Sort: {sortBy === "price_asc" ? "Price Low–High" : sortBy === "price_desc" ? "Price High–Low" : sortBy === "name_az" ? "A–Z" : sortBy}
+                    <button onClick={() => setSortBy("newest")} className="hover:text-blue-900 transition-colors">
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
           </header>
 
           {displayedProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <span className="material-symbols-outlined text-6xl text-outline-variant mb-6">
-                inventory_2
-              </span>
-              <h3 className="text-xl font-semibold text-on-surface mb-2">
+            <div className="flex flex-col items-center justify-center py-32 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 mb-6">
+                <span className="material-symbols-outlined text-4xl text-slate-300">
+                  search_off
+                </span>
+              </div>
+              <h3 className="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">
                 No products found
               </h3>
-              <p className="text-on-surface-variant text-sm mb-4">
-                Try adjusting your search or filters.
+              <p className="text-slate-500 font-medium text-sm mb-6 max-w-[280px]">
+                Try adjusting your search criteria or removing some filters to see more results.
               </p>
               {isAnyFilterActive && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-primary text-xs font-bold uppercase tracking-widest hover:underline"
+                  className="bg-slate-900 text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-slate-700 transition-colors"
                 >
                   Clear All Filters
                 </button>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-12">
-              {displayedProducts.map((product) => {
+            <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-4">
+              {displayedProducts
+                .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                .map((product) => {
                 const isOutOfStock = product.stock === 0;
                 const isLowStock = product.stock > 0 && product.stock <= 10;
                 const qty = getCartQty(product.id);
 
                 return (
-                  <div key={product.id} className="group">
+                  <div 
+                    key={product.id} 
+                    className="group bg-white rounded-[2.5rem] border border-slate-100 p-3 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col"
+                  >
                     {/* Image Container */}
-                    <div className="aspect-[4/5] bg-surface-container-low overflow-hidden rounded-[2rem] mb-5 relative shadow-soft group-hover:shadow-soft-hover transition-all duration-500">
+                    <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-[2rem] mb-5 relative">
                       {getImageUrl(product.image) ? (
                         <img
                           alt={product.name}
                           className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${
-                            isOutOfStock ? "grayscale opacity-50" : ""
+                            isOutOfStock ? "grayscale opacity-80" : ""
                           }`}
                           src={getImageUrl(product.image)}
                         />
@@ -725,7 +793,7 @@ const ProductsPage = () => {
                         <div
                           className={`w-full h-full flex items-center justify-center ${isOutOfStock ? "opacity-50" : ""}`}
                         >
-                          <span className="material-symbols-outlined text-5xl text-outline-variant">
+                          <span className="material-symbols-outlined text-5xl text-slate-300">
                             image
                           </span>
                         </div>
@@ -733,49 +801,49 @@ const ProductsPage = () => {
 
                       {/* Stock badge — top left */}
                       {isOutOfStock && (
-                        <div className="absolute top-3 left-3 z-10">
-                          <span className="bg-white/90 backdrop-blur-sm text-slate-600 text-[9px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full border border-slate-200/60 shadow-sm">
+                        <div className="absolute top-4 left-4 z-10">
+                          <span className="bg-slate-900 text-white text-[9px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full shadow-sm">
                             Unavailable
                           </span>
                         </div>
                       )}
                       {isLowStock && (
-                        <div className="absolute top-3 left-3 z-10">
+                        <div className="absolute top-4 left-4 z-10">
                           <span className="bg-amber-400 text-white text-[9px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full shadow-sm">
                             Only {product.stock} left
                           </span>
                         </div>
                       )}
 
-                      {/* Out of Stock overlay */}
+                      {/* Out of Stock overlay overlaying center */}
                       {isOutOfStock && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="bg-white/90 backdrop-blur-sm text-on-surface text-[10px] font-bold tracking-widest uppercase px-4 py-2 rounded-full border border-outline-variant/20">
-                            Unavailable
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-50/40">
+                          <span className="bg-white/90 backdrop-blur-sm text-slate-900 text-[11px] font-black tracking-widest uppercase px-5 py-2.5 rounded-full shadow-sm border border-slate-200/50">
+                            Sold Out
                           </span>
                         </div>
                       )}
 
                       {/* Add to Cart / Quantity Stepper */}
                       {!isOutOfStock && (
-                        <div className="absolute bottom-4 inset-x-4 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                        <div className={`absolute bottom-4 inset-x-4 transition-all duration-300 ${qty > 0 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"}`}>
                           {qty > 0 ? (
                             /* Quantity stepper */
-                            <div className="flex items-center justify-between bg-white/95 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg border border-outline-variant/10">
+                            <div className="flex items-center justify-between bg-white/95 backdrop-blur-md rounded-full px-3 py-2 shadow-lg border border-slate-200/50">
                               <button
                                 onClick={() => removeFromCart(product.id, !!user)}
-                                className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center transition-colors"
+                                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors shadow-inner"
                               >
-                                <span className="material-symbols-outlined text-sm text-on-surface">
+                                <span className="material-symbols-outlined text-sm text-slate-700">
                                   remove
                                 </span>
                               </button>
-                              <span className="text-sm font-black text-on-surface tracking-tight">
+                              <span className="text-sm font-black text-slate-900 tracking-tight">
                                 {qty}
                               </span>
                               <button
                                 onClick={() => addToCart(product, !!user)}
-                                className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-700 flex items-center justify-center transition-colors"
+                                className="w-8 h-8 rounded-full bg-primary hover:bg-blue-700 flex items-center justify-center transition-colors shadow-inner"
                               >
                                 <span className="material-symbols-outlined text-sm text-white">
                                   add
@@ -789,7 +857,7 @@ const ProductsPage = () => {
                                 addToCart(product, !!user);
                                 toast.success(`${product.name} added to cart`);
                               }}
-                              className="w-full bg-slate-900 text-white backdrop-blur-md rounded-full px-4 py-3 text-[10px] font-bold tracking-widest uppercase shadow-xl hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                              className="w-full bg-slate-900/95 text-white backdrop-blur-md rounded-full px-4 py-3.5 text-[10px] font-black tracking-widest uppercase shadow-xl hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                             >
                               <span className="material-symbols-outlined text-sm">
                                 shopping_cart
@@ -802,29 +870,54 @@ const ProductsPage = () => {
                     </div>
 
                     {/* Product Info */}
-                    <div className="flex justify-between items-start px-1">
-                      <div className="flex-1 min-w-0 pr-3">
-                        <h2 className="text-sm font-semibold text-on-surface tracking-tight mb-0.5 truncate">
+                    <div className="px-2 pb-1 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h2 className="text-[15px] leading-tight font-bold text-slate-900 tracking-tight mb-0 line-clamp-1">
                           {product.name}
                         </h2>
-                        <p className="text-xs text-on-surface-variant tracking-widest uppercase">
-                          {product.stock > 10
-                            ? "In Stock"
-                            : product.stock > 0
-                              ? `${product.stock} left`
-                              : "Out of Stock"}
-                        </p>
                       </div>
-                      <span
-                        className={`text-sm font-bold flex-shrink-0 ${isOutOfStock ? "text-outline-variant" : "text-on-surface"}`}
-                      >
-                        ₹{parseFloat(product.price).toLocaleString()}
-                      </span>
+                      <div className="mt-3">
+                        <span
+                          className={`text-[17px] font-black block ${isOutOfStock ? "text-slate-400" : "text-primary"}`}
+                        >
+                          ₹{parseFloat(product.price).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {/* Pagination Controls */}
+            {displayedProducts.length > ITEMS_PER_PAGE && (
+              <div className="mt-16 mb-8 flex justify-center items-center gap-4">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => {
+                    setCurrentPage(p => p - 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-slate-200 text-slate-600 disabled:opacity-50 hover:bg-slate-50 disabled:hover:bg-white transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <span className="text-sm font-bold text-slate-600">
+                  Page {currentPage} of {Math.ceil(displayedProducts.length / ITEMS_PER_PAGE)}
+                </span>
+                <button
+                  disabled={currentPage === Math.ceil(displayedProducts.length / ITEMS_PER_PAGE)}
+                  onClick={() => {
+                    setCurrentPage(p => p + 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-slate-200 text-slate-600 disabled:opacity-50 hover:bg-slate-50 disabled:hover:bg-white transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            )}
+            </>
           )}
         </section>
 

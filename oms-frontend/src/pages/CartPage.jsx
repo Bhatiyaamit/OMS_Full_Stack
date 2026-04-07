@@ -20,7 +20,7 @@ const CartPage = () => {
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
-    queryFn: () => api.get("/auth/me").then((r) => r.data.data),
+    queryFn: () => api.get("/auth/me").then((r) => r.data),
     enabled: !!user,
   });
 

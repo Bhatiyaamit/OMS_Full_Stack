@@ -61,18 +61,6 @@ const CustomerLayout = () => {
           </div>
         </div>
 
-        {/* Center Search (Optional/Decorative for now) */}
-        <div className="flex-1 max-w-md mx-8 hidden lg:block">
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-            <input 
-              className="w-full bg-surface-container-highest rounded-full border-none pl-12 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none" 
-              placeholder="Search products..." 
-              type="text"
-            />
-          </div>
-        </div>
-
         {/* Right Actions */}
         <div className="flex items-center gap-4">
           {/* Cart Icon — opens drawer, works for guests too */}

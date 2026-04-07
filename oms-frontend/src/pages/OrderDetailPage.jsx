@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Spin, Modal } from "antd";
 import { toast } from "sonner";
 import api from "../api/axiosInstance";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import InvoicePDF from "../components/InvoicePDF";
 
 const getImageUrl = (image) => {
   if (!image) return null;
@@ -121,16 +123,27 @@ const OrderDetailPage = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate("/orders")}
-          className="text-sm text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors bg-secondary-container border border-surface-container px-4 py-2 rounded-full hover:shadow-sm"
-        >
-          <span className="material-symbols-outlined text-base">
-            arrow_back
-          </span>
-          <span className="font-semibold hidden sm:inline">Back to Orders</span>
-          <span className="font-semibold sm:hidden">Back</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {order.status === "PENDING" || order.status === "CONFIRMED" && (
+            <button
+              onClick={handleCancelOrder}
+              className="text-sm bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-200 px-4 py-2 rounded-full font-semibold flex items-center gap-1.5 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-base">delete</span>
+              <span className="hidden sm:inline">Cancel Order</span>
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/orders")}
+            className="text-sm text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors bg-secondary-container border border-surface-container px-4 py-2 rounded-full hover:shadow-sm"
+          >
+            <span className="material-symbols-outlined text-base">
+              arrow_back
+            </span>
+            <span className="font-semibold hidden sm:inline">Back to Orders</span>
+            <span className="font-semibold sm:hidden">Back</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Section 2: Two Column Grid ── */}
@@ -325,6 +338,23 @@ const OrderDetailPage = () => {
                   ₹{parseFloat(order.totalAmount).toLocaleString()}
                 </span>
               </div>
+
+              <div className="pt-6">
+                <PDFDownloadLink
+                  document={<InvoicePDF order={order} profile={profile} />}
+                  fileName={`Invoice-${order.id.split("-")[0].toUpperCase()}.pdf`}
+                  className="w-full py-2.5 rounded-full border-2 border-slate-200 text-sm font-bold text-slate-600 hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2 group"
+                >
+                  {({ loading }) => (
+                    <React.Fragment>
+                      <span className={`material-symbols-outlined text-lg ${loading ? 'animate-spin' : 'group-hover:-translate-y-0.5 transition-transform'}`}>
+                        {loading ? "sync" : "receipt_long"}
+                      </span>
+                      {loading ? "Generating PDF..." : "Download Invoice"}
+                    </React.Fragment>
+                  )}
+                </PDFDownloadLink>
+              </div>
             </div>
           </div>
 
@@ -432,28 +462,6 @@ const OrderDetailPage = () => {
         </div>
       </div>
 
-      {/* ── Section 3: Cancel Order ── */}
-      {order.status === "PENDING" && (
-        <div className="mt-8 bg-red-50 border border-red-100 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <h3 className="text-base font-bold text-red-700 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-lg">warning</span>
-              Cancel Order
-            </h3>
-            <p className="text-sm text-red-500 mt-1">
-              This will restore stock. Cannot be undone.
-            </p>
-          </div>
-
-          <button
-            onClick={handleCancelOrder}
-            className="w-full md:w-auto bg-white border border-red-200 text-red-600 px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined text-sm">delete</span>
-            Cancel Order
-          </button>
-        </div>
-      )}
     </div>
   );
 };

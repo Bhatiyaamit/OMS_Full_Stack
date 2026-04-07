@@ -12,7 +12,13 @@ const getOrCreateCart = async (userId) => {
       items: {
         include: {
           product: {
-            select: { id: true, name: true, price: true, stock: true, image: true },
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              stock: true,
+              image: true,
+            },
           },
         },
       },
@@ -26,7 +32,13 @@ const getOrCreateCart = async (userId) => {
         items: {
           include: {
             product: {
-              select: { id: true, name: true, price: true, stock: true, image: true },
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                stock: true,
+                image: true,
+              },
             },
           },
         },
@@ -42,11 +54,11 @@ const getOrCreateCart = async (userId) => {
 // ─────────────────────────────────────────────
 const formatCartItems = (cart) =>
   cart.items.map((ci) => ({
-    id:       ci.product.id,
-    name:     ci.product.name,
-    price:    ci.product.price,
-    stock:    ci.product.stock,
-    image:    ci.product.image,
+    id: ci.product.id,
+    name: ci.product.name,
+    price: ci.product.price,
+    stock: ci.product.stock,
+    image: ci.product.image,
     quantity: ci.quantity,
   }));
 
@@ -76,28 +88,47 @@ const syncCart = asyncHandler(async (req, res) => {
     cart = await prisma.cart.create({ data: { userId: req.user.id } });
   }
 
-  // Merge strategy: keep existing DB items, then add/increment guest items
-  await prisma.$transaction(async (tx) => {
-    for (const { productId, quantity } of items) {
-      if (!productId || quantity <= 0) continue;
+  // Deduplicate incoming items (in case of frontend bugs causing duplicates)
+  const itemMap = new Map();
+  for (const { productId, quantity } of items) {
+    if (!productId || quantity <= 0) continue;
+    itemMap.set(productId, (itemMap.get(productId) || 0) + quantity);
+  }
 
-      // Get stock cap
+  // Strategy A — local wins: gracefully upsert from localStorage
+  await prisma.$transaction(async (tx) => {
+    // Step 1: Delete any items from the server cart that are NOT in the local cart
+    const incomingProductIds = Array.from(itemMap.keys());
+    await tx.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+        productId: { notIn: incomingProductIds },
+      },
+    });
+
+    // Step 2: Upsert incoming items (safe against duplicate network requests)
+    for (const [productId, quantity] of itemMap.entries()) {
       const product = await tx.product.findUnique({
         where: { id: productId },
         select: { stock: true },
       });
       if (!product) continue;
 
-      // Upsert using the compound unique key — no duplicate rows possible
+      const finalQuantity = Math.min(quantity, product.stock);
+
       await tx.cartItem.upsert({
         where: { cartId_productId: { cartId: cart.id, productId } },
-        update: { quantity: { increment: Math.min(quantity, product.stock) } },
-        create: { cartId: cart.id, productId, quantity: Math.min(quantity, product.stock) },
+        update: { quantity: finalQuantity },
+        create: {
+          cartId: cart.id,
+          productId,
+          quantity: finalQuantity,
+        },
       });
     }
   });
 
-  // Return updated cart
+  // Return saved cart
   const updated = await getOrCreateCart(req.user.id);
   res.json({ success: true, data: { items: formatCartItems(updated) } });
 });

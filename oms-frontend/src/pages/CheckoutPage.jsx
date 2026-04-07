@@ -53,8 +53,8 @@ const CheckoutForm = ({ items, totalAmount }) => {
 
         const order = res.data;
 
-        // Step 3 — clear cart
-        clearCart();
+        // Step 3 — clear cart (local + server)
+        clearCart(true);
 
         // Step 4 — go to success page
         toast.success("Payment successful!", {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useAllOrders,
   useMyOrders,
@@ -160,6 +160,9 @@ const OrdersPage = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  
+  // Accordion State for Customer View
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   const statusParam = adminView ? activeTab : filterStatus;
   const queryParams = {
@@ -193,6 +196,17 @@ const OrdersPage = () => {
   const paginationInfo = adminView
     ? allOrdersData?.pagination
     : myOrdersData?.pagination;
+
+  // Auto-expand the first order whenever the list changes (e.g. changing filters/tabs)
+  useEffect(() => {
+    const firstOrderId = orders[0]?.id;
+    if (!adminView && !loading && firstOrderId) {
+      const timer = setTimeout(() => {
+        setExpandedOrderId((prev) => prev || firstOrderId);
+      }, 500); // 500ms delay for attention-grabbing animation
+      return () => clearTimeout(timer);
+    }
+  }, [loading, orders[0]?.id, adminView]);
 
   // Change handlers to reset page when filtering
   const handleFilterChange = (status) => {
@@ -440,7 +454,7 @@ const OrdersPage = () => {
     ];
 
     return (
-      <div className="w-full max-w-[1800px] mx-auto pb-24">
+      <div className="w-full max-w-[1800px] mx-auto">
         {/* ── Page header ── */}
         <header className="mb-3">
           <div className="flex items-center justify-between mb-2">
@@ -579,7 +593,7 @@ const OrdersPage = () => {
                           ? "border-rose-100 opacity-75"
                           : "border-slate-100 hover:border-slate-300"
                       }`}
-                      onClick={() => navigate(`/order-detail/${order.id}`)}
+                      onClick={() => setExpandedOrderId((prev) => prev === order.id ? null : order.id)}
                     >
                       <div 
                         className="px-4 py-3 md:px-5 flex items-center gap-4" 
@@ -670,56 +684,121 @@ const OrdersPage = () => {
                           </span>
 
                           {/* Actions Group */}
-                          <div className="flex items-center gap-1 shrink-0 border-l border-slate-100 pl-3">
-                            {/* Rule 1: Always render cancel button, use opacity to disable */}
+                          <div className="flex items-center gap-1 shrink-0 border-l border-slate-100 pl-3">  
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (order.status === "PENDING" && !cancelling) {
-                                  handleCancelOrder(order.id);
-                                }
+                                setExpandedOrderId((prev) => 
+                                  prev === order.id ? null : order.id
+                                );
                               }}
-                              disabled={order.status !== "PENDING" || cancelling}
-                              style={{ 
-                                opacity: order.status === "PENDING" ? 1 : 0.3, 
-                                pointerEvents: order.status === "PENDING" ? 'auto' : 'none' 
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                              title="Cancel order"
+                              className="p-1.5 rounded-lg text-slate-400 group-hover:text-slate-900 group-hover:bg-slate-100 transition-colors flex items-center justify-center relative"
+                              title={expandedOrderId === order.id ? "Hide Details" : "Show Details"}
                             >
-                              <span className="material-symbols-outlined text-[18px]">
-                                cancel
-                              </span>
-                            </button>
-                            
-                            <div
-                              className="p-1.5 rounded-lg text-slate-400 group-hover:text-slate-900 group-hover:bg-slate-100 transition-colors"
-                              title="View Details"
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
+                              <span 
+                                className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${
+                                  expandedOrderId === order.id ? "rotate-90" : ""
+                                }`}
+                              >
                                 chevron_right
                               </span>
-                            </div>
+                            </button>
                           </div>
                         </div>
                       </div>
+
+                      {/* ── Expanded Region ── */}
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          expandedOrderId === order.id ? "max-h-[1500px] opacity-100" : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        <div className="px-5 pb-5 pt-2 border-t border-slate-100 bg-slate-50/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-1">
+                            Items in this Order
+                          </p>
+                          <div className="space-y-2">
+                            {order.items?.map((item) => (
+                              <div
+                                key={item.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/order-detail/${order.id}`);
+                                }}
+                                className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-100 cursor-pointer hover:border-slate-300 hover:shadow-sm transition-all group/item"
+                              >
+                                <div className="w-12 h-12 bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                  {item.product?.image ? (
+                                    <img
+                                      src={
+                                        item.product.image.startsWith("http")
+                                          ? item.product.image
+                                          : `http://localhost:5011${item.product.image}`
+                                      }
+                                      alt={item.product?.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="material-symbols-outlined text-slate-300 text-xl">
+                                      image
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-slate-900 text-sm truncate">
+                                    {item.product?.name || "Unknown Product"}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 font-medium">
+                                    Qty: {item.quantity} &bull; ₹{parseFloat(item.priceAtPurchase).toLocaleString()} each
+                                  </p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="font-black text-slate-900 text-sm">
+                                    ₹
+                                    {(
+                                      parseFloat(item.priceAtPurchase) * item.quantity
+                                    ).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-4 flex justify-end">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/order-detail/${order.id}`);
+                              }}
+                              className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:shadow"
+                            >
+                              View Full Order details
+                              <span className="material-symbols-outlined text-[14px]">
+                                arrow_forward
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      {/* ── End Expanded Region ── */}
+
                     </div>
                   );
                 })}
 
-                {/* Pagination */}
-                {paginationInfo && paginationInfo.totalPages > 1 && (
-                  <div className="flex justify-center mt-6 pt-4 pb-4">
-                    <Pagination
-                      current={currentPage}
-                      pageSize={pageSize}
-                      total={paginationInfo.total}
-                      onChange={(page, size) => {
-                        setCurrentPage(page);
-                        setPageSize(size);
-                      }}
-                      showSizeChanger
-                    />
+                {/* Load More Button */}
+                {paginationInfo && orders.length < paginationInfo.total && (
+                  <div className="flex justify-center mt-8 pt-4 pb-8">
+                    <button
+                      onClick={() => setPageSize((prev) => prev + 10)}
+                      className="group flex items-center gap-2 bg-white px-8 py-3 rounded-full border border-slate-200 shadow-sm hover:shadow hover:border-slate-300 transition-all active:scale-95"
+                    >
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-600 group-hover:text-slate-900 transition-colors">
+                        View More
+                      </span>
+                      <span className="material-symbols-outlined text-sm text-slate-400 group-hover:text-slate-900 group-hover:translate-y-0.5 transition-all">
+                        south
+                      </span>
+                    </button>
                   </div>
                 )}
               </div>
