@@ -30,9 +30,6 @@ const ProductsPage = () => {
   const addToCart = useCartStore((s) => s.addItem);
   const removeFromCart = useCartStore((s) => s.removeItem);
 
-  // ── Initial load state to prevent unmounting UI ──
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
   // ── Filter / sort state ──
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -63,16 +60,12 @@ const ProductsPage = () => {
   const [imageError, setImageError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const hasMountedRef = useRef(false);
 
   const { data: productsData, isLoading } = useProducts({ search: debouncedSearchTerm });
   const { mutate: deleteProduct } = useDeleteProduct();
   const { mutate: createProduct, isPending: creating } = useCreateProduct();
   const { mutate: updateProduct, isPending: updating } = useUpdateProduct();
-
-  // Clear initial load flag once data completes first fetch
-  useEffect(() => {
-    if (!isLoading) setIsInitialLoad(false);
-  }, [isLoading]);
 
   const products = useMemo(() => productsData?.data || [], [productsData]);
 
@@ -186,7 +179,13 @@ const ProductsPage = () => {
 
   // ── Reset page on filter change ──
   useEffect(() => {
-    setCurrentPage(1);
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => setCurrentPage(1));
+    return () => window.cancelAnimationFrame(frame);
   }, [searchTerm, sortBy, availabilityFilters, minPrice, maxPrice, stockFilter]);
 
   // ── Availability checkbox toggle ──
@@ -314,7 +313,7 @@ const ProductsPage = () => {
     return { text: "In Stock", classes: "bg-emerald-100 text-emerald-700" };
   };
 
-  if (isLoading && isInitialLoad) {
+  if (isLoading && !productsData) {
     return (
       <div className="flex items-center justify-center h-64">
         <Spin size="large" />
@@ -413,7 +412,7 @@ const ProductsPage = () => {
                 <img
                   src={getImageUrl(editingProduct.image)}
                   alt="Current"
-                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                  className="w-16 h-16 rounded-xl object-cover shrink-0"
                 />
                 <p className="text-xs text-on-surface-variant font-medium leading-relaxed">
                   Current image — upload new to replace
@@ -441,7 +440,7 @@ const ProductsPage = () => {
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-16 h-16 rounded-xl object-cover flex-shrink-0 shadow"
+                    className="w-16 h-16 rounded-xl object-cover shrink-0 shadow"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-on-surface truncate">
@@ -457,7 +456,7 @@ const ProductsPage = () => {
                       e.stopPropagation();
                       clearImage();
                     }}
-                    className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center hover:bg-error/10 hover:text-error transition-colors flex-shrink-0"
+                    className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center hover:bg-error/10 hover:text-error transition-colors shrink-0"
                   >
                     <span className="material-symbols-outlined text-sm">
                       close
@@ -502,7 +501,7 @@ const ProductsPage = () => {
           <button
             type="submit"
             disabled={creating || updating}
-            className="flex w-full items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dim px-8 py-4 text-sm font-semibold text-on-primary shadow-lg shadow-primary/20 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded-full bg-linear-to-br from-primary to-primary-dim px-8 py-4 text-sm font-semibold text-on-primary shadow-lg shadow-primary/20 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
           >
             {creating || updating
               ? "Saving..."
@@ -524,7 +523,7 @@ const ProductsPage = () => {
     return (
       <div className="flex gap-12 xl:gap-20">
         {/* ── Left Filter Sidebar ── */}
-        <aside className="w-64 flex-shrink-0 hidden lg:block">
+        <aside className="hidden w-64 shrink-0 lg:block">
           <div className="sticky top-24 space-y-10">
             {/* Search */}
             <div>
@@ -558,7 +557,7 @@ const ProductsPage = () => {
                   onChange={(e) => setMinPrice(e.target.value)}
                   className="w-full bg-surface-container-low border-none rounded-full py-2.5 px-4 text-xs focus:ring-1 focus:ring-primary"
                 />
-                <span className="text-outline text-xs flex-shrink-0">—</span>
+                <span className="text-outline text-xs shrink-0">—</span>
                 <input
                   type="number"
                   placeholder="Max ₹"
@@ -743,7 +742,7 @@ const ProductsPage = () => {
           </header>
 
           {displayedProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-32 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
+            <div className="flex flex-col items-center justify-center rounded-4xl border-2 border-dashed border-slate-200 bg-slate-50/50 py-32 text-center">
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 mb-6">
                 <span className="material-symbols-outlined text-4xl text-slate-300">
                   search_off
@@ -752,7 +751,7 @@ const ProductsPage = () => {
               <h3 className="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">
                 No products found
               </h3>
-              <p className="text-slate-500 font-medium text-sm mb-6 max-w-[280px]">
+              <p className="mb-6 max-w-70 text-sm font-medium text-slate-500">
                 Try adjusting your search criteria or removing some filters to see more results.
               </p>
               {isAnyFilterActive && (
@@ -780,7 +779,7 @@ const ProductsPage = () => {
                     className="group bg-white rounded-[2.5rem] border border-slate-100 p-3 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col"
                   >
                     {/* Image Container */}
-                    <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-[2rem] mb-5 relative">
+                    <div className="relative mb-5 aspect-4/5 overflow-hidden rounded-4xl bg-slate-50">
                       {getImageUrl(product.image) ? (
                         <img
                           alt={product.name}
@@ -1011,7 +1010,7 @@ const ProductsPage = () => {
       {/* Table */}
       <div className="mt-4">
         <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
-          <table className="w-full text-left border-collapse">
+          <table className="min-w-190 w-full border-collapse text-left">
             <thead>
               <tr className="bg-surface-container-low text-on-surface-variant">
                 <th className="py-4 px-6 text-[10px] font-semibold uppercase tracking-widest">

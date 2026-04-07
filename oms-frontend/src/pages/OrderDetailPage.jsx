@@ -101,14 +101,14 @@ const OrderDetailPage = () => {
   return (
     <div className="max-w-5xl mx-auto py-2 px-4 pb-24">
       {/* ── Section 1: Header ── */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold tracking-tight text-on-surface uppercase font-mono">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-on-surface uppercase font-mono truncate">
               #{order.id.split("-")[0]}
             </h1>
             <span
-              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${STATUS_CONFIG[order.status] || "bg-surface-container text-on-surface"}`}
+              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${STATUS_CONFIG[order.status] || "bg-surface-container text-on-surface"}`}
             >
               {order.status}
             </span>
@@ -123,11 +123,11 @@ const OrderDetailPage = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:gap-3">
           {(order.status === "PENDING" || order.status === "CONFIRMED") && (
             <button
               onClick={handleCancelOrder}
-              className="text-sm bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-200 px-4 py-2 rounded-full font-semibold flex items-center gap-1.5 shadow-sm"
+              className="hidden lg:flex text-sm bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-200 px-4 py-2 rounded-full font-semibold items-center gap-1.5 shadow-sm"
             >
               <span className="material-symbols-outlined text-base">delete</span>
               <span className="hidden sm:inline">Cancel Order</span>
@@ -135,7 +135,7 @@ const OrderDetailPage = () => {
           )}
           <button
             onClick={() => navigate("/orders")}
-            className="text-sm text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors bg-secondary-container border border-surface-container px-4 py-2 rounded-full hover:shadow-sm"
+            className="hidden sm:flex text-sm text-on-surface-variant hover:text-on-surface items-center gap-1.5 transition-colors bg-secondary-container border border-surface-container px-4 py-2 rounded-full hover:shadow-sm whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-base">
               arrow_back
@@ -461,6 +461,18 @@ const OrderDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {(order.status === "PENDING" || order.status === "CONFIRMED") && (
+        <div className="mt-4 lg:hidden">
+          <button
+            onClick={handleCancelOrder}
+            className="w-full rounded-full border border-red-400 bg-transparent py-3 text-red-500 hover:bg-red-50 transition-colors font-semibold flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[16px]">delete</span>
+            Cancel Order
+          </button>
+        </div>
+      )}
 
     </div>
   );
