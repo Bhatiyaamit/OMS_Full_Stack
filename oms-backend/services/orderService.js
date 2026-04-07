@@ -146,8 +146,11 @@ const cancelOrderService = async (orderId, userId) => {
       });
     }
 
-    // Delete the order (cascade deletes OrderItems via schema)
-    return tx.order.delete({ where: { id: orderId } });
+    // Update the order status instead of hard deleting it
+    return tx.order.update({ 
+      where: { id: orderId },
+      data: { status: "CANCELLED" }
+    });
   });
 
   return cancelled;

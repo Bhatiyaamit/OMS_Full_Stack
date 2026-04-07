@@ -58,7 +58,6 @@ const CartDrawer = ({ open, onClose }) => {
         open={open}
         onClose={onClose}
         placement="right"
-        width={420}
         title={null}
         closable={false}
         styles={{
@@ -68,7 +67,10 @@ const CartDrawer = ({ open, onClose }) => {
             flexDirection: "column",
             height: "100%",
           },
-          wrapper: { boxShadow: "-8px 0 40px rgba(0,0,0,0.12)" },
+          wrapper: { 
+            width: 420,
+            boxShadow: "-8px 0 40px rgba(0,0,0,0.12)" 
+          },
         }}
       >
         <div className="flex flex-col h-full">

@@ -138,7 +138,7 @@ const CheckoutAuthModal = ({ open, onClose, onSuccess, mode = "checkout" }) => {
       centered
       width={480}
       closable
-      maskClosable
+      mask={{ closable: true }}
       styles={{
         content: { borderRadius: "1.5rem", padding: 0, overflow: "hidden" },
         mask:    { backdropFilter: "blur(6px)", background: "rgba(0,0,0,0.35)" },

@@ -8,15 +8,7 @@ import {
 } from "../hooks/useOrders";
 import useAuthStore from "../store/authStore";
 import { toast } from "sonner";
-import {
-  Spin,
-  Drawer,
-  Divider,
-  Modal,
-  Steps,
-  Pagination,
-  Avatar,
-} from "antd";
+import { Spin, Drawer, Divider, Modal, Steps, Pagination, Avatar } from "antd";
 import { useNavigate } from "react-router-dom";
 
 /* ── Status config ── */
@@ -160,7 +152,7 @@ const OrdersPage = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   // Accordion State for Customer View
   const [expandedOrderId, setExpandedOrderId] = useState(null);
 
@@ -244,8 +236,7 @@ const OrdersPage = () => {
             toast.success("Order cancelled");
             refetchMy();
           },
-          onError: (err) =>
-            toast.error(err?.message || "Failed to cancel"),
+          onError: (err) => toast.error(err?.message || "Failed to cancel"),
         });
       },
     });
@@ -472,8 +463,8 @@ const OrdersPage = () => {
             </button>
           </div>
           <p className="text-slate-400 font-medium text-sm">
-            {orders.length > 0
-              ? `You have placed ${orders.length} orders`
+            {paginationInfo?.total > 0
+              ? `You have placed ${paginationInfo.total} orders`
               : "No orders yet"}
           </p>
         </header>
@@ -484,16 +475,16 @@ const OrdersPage = () => {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* ═══ LEFT SIDEBAR FILTERS ═══ */}
           <aside className="w-full lg:w-72 shrink-0 sticky top-6 self-start">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="lg:bg-white lg:rounded-2xl lg:border lg:border-slate-100 lg:shadow-sm overflow-hidden">
               {/* Sidebar header */}
-              <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50">
+              <div className="hidden lg:block px-5 py-4 border-b border-slate-50 bg-slate-50/50">
                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">
                   Filter Orders
                 </p>
               </div>
 
               {/* Filter items */}
-              <nav className="p-3 space-y-1">
+              <nav className="flex lg:flex-col overflow-x-auto no-scrollbar gap-2 lg:gap-0 lg:p-3 lg:space-y-1 pb-2 lg:pb-3">
                 {statusFilters.map((s) => {
                   const cfg = STATUS_CONFIG[s] || {};
                   const isActive = filterStatus === s;
@@ -506,23 +497,23 @@ const OrdersPage = () => {
                     <button
                       key={s}
                       onClick={() => handleFilterChange(s)}
-                      className={`w-full flex items-center justify-between gap-4 px-4 py-3 rounded-xl text-left transition-all ${
+                      className={`shrink-0 lg:w-full flex items-center justify-between gap-3 lg:gap-4 px-4 py-2.5 lg:py-3 rounded-full lg:rounded-xl text-left transition-all border lg:border-transparent border-slate-200 ${
                         isActive
-                          ? "bg-slate-900 text-white shadow-sm"
-                          : "text-slate-600 hover:bg-slate-50"
+                          ? "bg-slate-900 border-slate-900 text-white lg:shadow-sm"
+                          : "bg-white text-slate-600 hover:bg-slate-50"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 lg:gap-3">
                         {s !== "ALL" && (
                           <span
-                            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                            className={`w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full shrink-0 ${
                               isActive ? "bg-white" : cfg.dot || "bg-slate-300"
                             }`}
                           />
                         )}
                         {s === "ALL" && (
                           <span
-                            className={`material-symbols-outlined text-[18px] shrink-0 ${
+                            className={`material-symbols-outlined text-[16px] lg:text-[18px] shrink-0 ${
                               isActive ? "text-white" : "text-slate-400"
                             }`}
                             style={{ fontVariationSettings: "'FILL' 1" }}
@@ -530,13 +521,13 @@ const OrdersPage = () => {
                             apps
                           </span>
                         )}
-                        <span className="text-xs font-black uppercase tracking-wider">
+                        <span className="text-[10px] lg:text-xs font-black uppercase tracking-wider whitespace-nowrap">
                           {s === "ALL" ? "All Orders" : cfg.label || s}
                         </span>
                       </div>
                       {showCount !== null && (
                         <span
-                          className={`text-[11px] font-black px-2.5 py-0.5 rounded-full shrink-0 bg-white/20 text-white`}
+                          className={`text-[10px] lg:text-[11px] font-black px-2 lg:px-2.5 py-0.5 rounded-full shrink-0 bg-white/20 text-white`}
                         >
                           {showCount}
                         </span>
@@ -547,7 +538,7 @@ const OrdersPage = () => {
               </nav>
 
               {/* Sidebar footer — quick spend summary */}
-              <div className="px-5 py-4 border-t border-slate-50 bg-slate-50/80">
+              <div className="hidden lg:block px-5 py-4 border-t border-slate-50 bg-slate-50/80">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
                   Total Spent
                 </p>
@@ -559,7 +550,7 @@ const OrdersPage = () => {
           </aside>
 
           {/* ═══ ORDERS LIST ═══ */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 mx-auto">
             {filteredOrders.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-100 p-16 flex flex-col items-center justify-center text-center shadow-sm">
                 <span className="material-symbols-outlined text-5xl text-slate-200 mb-4">
@@ -593,42 +584,65 @@ const OrdersPage = () => {
                           ? "border-rose-100 opacity-75"
                           : "border-slate-100 hover:border-slate-300"
                       }`}
-                      onClick={() => setExpandedOrderId((prev) => prev === order.id ? null : order.id)}
+                      onClick={() =>
+                        setExpandedOrderId((prev) =>
+                          prev === order.id ? null : order.id,
+                        )
+                      }
                     >
-                      <div 
-                        className="px-4 py-3 md:px-5 flex items-center gap-4" 
+                      <div
+                        className="px-4 py-3 md:px-5 flex items-center gap-4"
                         style={{ minHeight: 72 }}
                       >
                         {/* ── Left Side: Images & Info ── */}
                         {(() => {
                           const totalItemsCount =
-                            order.items?.reduce((acc, i) => acc + i.quantity, 0) || 0;
+                            order.items?.reduce(
+                              (acc, i) => acc + i.quantity,
+                              0,
+                            ) || 0;
                           const uniqueProducts =
                             order.items?.map((i) => i.product) || [];
                           const maxToDisplay = 3;
-                          const displayItems = uniqueProducts.slice(0, maxToDisplay);
+                          const displayItems = uniqueProducts.slice(
+                            0,
+                            maxToDisplay,
+                          );
 
                           return (
                             <div className="flex items-center gap-3.5 flex-1 min-w-0">
                               {/* Rule 3: Fixed width image stack */}
-                              <div style={{ width: 68, flexShrink: 0, position: 'relative', height: 44 }}>
+                              <div
+                                style={{
+                                  width: 68,
+                                  flexShrink: 0,
+                                  position: "relative",
+                                  height: 44,
+                                }}
+                              >
                                 {displayItems.map((prod, idx) => {
                                   const imgSrc = prod?.image?.startsWith("http")
                                     ? prod.image
-                                    : prod?.image ? `http://localhost:5011${prod?.image}` : null;
-                                  
+                                    : prod?.image
+                                      ? `http://localhost:5011${prod?.image}`
+                                      : null;
+
                                   return (
                                     <div
                                       key={idx}
                                       style={{
-                                        position: 'absolute',
+                                        position: "absolute",
                                         left: idx * 14,
                                         zIndex: maxToDisplay - idx,
                                       }}
                                       className="w-11 h-11 rounded-full border-2 border-white shadow-sm flex items-center justify-center bg-slate-50 overflow-hidden"
                                     >
                                       {imgSrc ? (
-                                        <img src={imgSrc} alt="product" className="w-full h-full object-cover" />
+                                        <img
+                                          src={imgSrc}
+                                          alt="product"
+                                          className="w-full h-full object-cover"
+                                        />
                                       ) : (
                                         <span className="material-symbols-outlined text-sm text-slate-400">
                                           image
@@ -648,16 +662,22 @@ const OrdersPage = () => {
                                   </span>
                                   <StatusBadge status={order.status} />
                                 </div>
-                                
+
                                 {/* Line 2: N items · Date */}
                                 <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
-                                  <span>{totalItemsCount} {totalItemsCount === 1 ? "item" : "items"}</span>
+                                  <span>
+                                    {totalItemsCount}{" "}
+                                    {totalItemsCount === 1 ? "item" : "items"}
+                                  </span>
                                   <span className="opacity-50">&bull;</span>
                                   <span>
-                                    {new Date(order.createdAt).toLocaleDateString(
-                                      "en-US",
-                                      { month: "short", day: "numeric", year: "numeric" }
-                                    )}
+                                    {new Date(
+                                      order.createdAt,
+                                    ).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    })}
                                   </span>
                                 </p>
                               </div>
@@ -666,17 +686,24 @@ const OrdersPage = () => {
                         })()}
 
                         {/* ── Rule 2: Right Column Fixed Width ── */}
-                        <div 
-                          style={{ 
-                            display: 'flex', alignItems: 'center', gap: 8,
-                            minWidth: 160, flexShrink: 0, marginLeft: 'auto' 
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            minWidth: 160,
+                            flexShrink: 0,
+                            marginLeft: "auto",
                           }}
                         >
                           {/* Price element */}
-                          <span 
-                            style={{ 
-                              minWidth: 90, textAlign: 'right', 
-                              fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap' 
+                          <span
+                            style={{
+                              minWidth: 90,
+                              textAlign: "right",
+                              fontSize: 14,
+                              fontWeight: 500,
+                              whiteSpace: "nowrap",
                             }}
                             className="text-slate-900"
                           >
@@ -684,20 +711,26 @@ const OrdersPage = () => {
                           </span>
 
                           {/* Actions Group */}
-                          <div className="flex items-center gap-1 shrink-0 border-l border-slate-100 pl-3">  
+                          <div className="flex items-center gap-1 shrink-0 border-l border-slate-100 pl-3">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setExpandedOrderId((prev) => 
-                                  prev === order.id ? null : order.id
+                                setExpandedOrderId((prev) =>
+                                  prev === order.id ? null : order.id,
                                 );
                               }}
                               className="p-1.5 rounded-lg text-slate-400 group-hover:text-slate-900 group-hover:bg-slate-100 transition-colors flex items-center justify-center relative"
-                              title={expandedOrderId === order.id ? "Hide Details" : "Show Details"}
+                              title={
+                                expandedOrderId === order.id
+                                  ? "Hide Details"
+                                  : "Show Details"
+                              }
                             >
-                              <span 
+                              <span
                                 className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${
-                                  expandedOrderId === order.id ? "rotate-90" : ""
+                                  expandedOrderId === order.id
+                                    ? "rotate-90"
+                                    : ""
                                 }`}
                               >
                                 chevron_right
@@ -710,7 +743,9 @@ const OrdersPage = () => {
                       {/* ── Expanded Region ── */}
                       <div
                         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          expandedOrderId === order.id ? "max-h-[1500px] opacity-100" : "max-h-0 opacity-0"
+                          expandedOrderId === order.id
+                            ? "max-h-[1500px] opacity-100"
+                            : "max-h-0 opacity-0"
                         }`}
                       >
                         <div className="px-5 pb-5 pt-2 border-t border-slate-100 bg-slate-50/50">
@@ -749,14 +784,19 @@ const OrdersPage = () => {
                                     {item.product?.name || "Unknown Product"}
                                   </p>
                                   <p className="text-[11px] text-slate-400 font-medium">
-                                    Qty: {item.quantity} &bull; ₹{parseFloat(item.priceAtPurchase).toLocaleString()} each
+                                    Qty: {item.quantity} &bull; ₹
+                                    {parseFloat(
+                                      item.priceAtPurchase,
+                                    ).toLocaleString()}{" "}
+                                    each
                                   </p>
                                 </div>
                                 <div className="text-right shrink-0">
                                   <p className="font-black text-slate-900 text-sm">
                                     ₹
                                     {(
-                                      parseFloat(item.priceAtPurchase) * item.quantity
+                                      parseFloat(item.priceAtPurchase) *
+                                      item.quantity
                                     ).toLocaleString()}
                                   </p>
                                 </div>
@@ -780,7 +820,6 @@ const OrdersPage = () => {
                         </div>
                       </div>
                       {/* ── End Expanded Region ── */}
-
                     </div>
                   );
                 })}
@@ -824,7 +863,7 @@ const OrdersPage = () => {
   );
 
   const adminStats = {
-    total: orders.length,
+    total: paginationInfo?.total || orders.length,
     pending: orders.filter((o) => o.status === "PENDING").length,
     shipped: orders.filter((o) => o.status === "SHIPPED").length,
     delivered: orders.filter((o) => o.status === "DELIVERED").length,
@@ -930,8 +969,54 @@ const OrdersPage = () => {
 
       {/* ── Main table card ── */}
       <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        {/* Tab filter row */}
-        <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        {/* ── MOBILE-ONLY: Native Dropdown Filter ── */}
+        <div className="lg:hidden px-6 pt-5 pb-4 border-b border-slate-100">
+          <div className="relative">
+            <select
+              value={activeTab}
+              onChange={(e) => handleTabChange(e.target.value)}
+              className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-black uppercase tracking-wider py-4 pl-5 pr-12 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-shadow"
+            >
+              {[
+                "ALL",
+                "PENDING",
+                "CONFIRMED",
+                "SHIPPED",
+                "DELIVERED",
+                "CANCELLED",
+              ].map((tab) => {
+                const cfg = STATUS_CONFIG[tab] || {};
+                const labelText =
+                  tab === "ALL" ? "All Orders" : cfg.label || tab;
+
+                // Keep the count inside the string
+                const count =
+                  tab === "ALL"
+                    ? tab === filterStatus && paginationInfo
+                      ? paginationInfo.total
+                      : "-"
+                    : tab === activeTab && paginationInfo
+                      ? paginationInfo.total
+                      : "-";
+
+                return (
+                  <option key={tab} value={tab}>
+                    {labelText} {count !== "-" ? `(${count})` : ""}
+                  </option>
+                );
+              })}
+            </select>
+            <span
+              className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              style={{ fontVariationSettings: "'wght' 600" }}
+            >
+              unfold_more
+            </span>
+          </div>
+        </div>
+
+        {/* ── DESKTOP-ONLY: Tab filter row ── */}
+        <div className="hidden lg:flex px-6 pt-5 pb-4 border-b border-slate-100 items-center gap-2 overflow-x-auto no-scrollbar">
           {[
             "ALL",
             "PENDING",

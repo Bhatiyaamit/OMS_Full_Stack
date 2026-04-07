@@ -124,7 +124,7 @@ const OrderDetailPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {order.status === "PENDING" || order.status === "CONFIRMED" && (
+          {(order.status === "PENDING" || order.status === "CONFIRMED") && (
             <button
               onClick={handleCancelOrder}
               className="text-sm bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-200 px-4 py-2 rounded-full font-semibold flex items-center gap-1.5 shadow-sm"
