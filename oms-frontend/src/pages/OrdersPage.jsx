@@ -484,7 +484,7 @@ const OrdersPage = () => {
               </div>
 
               {/* Filter items */}
-              <nav className="flex lg:flex-col overflow-x-auto no-scrollbar gap-2 lg:gap-0 lg:p-3 lg:space-y-1 pb-2 lg:pb-3">
+              <nav className="flex lg:flex-col overflow-x-auto gap-2 lg:gap-0 lg:p-3 lg:space-y-1 pb-2 lg:pb-3">
                 {statusFilters.map((s) => {
                   const cfg = STATUS_CONFIG[s] || {};
                   const isActive = filterStatus === s;
@@ -623,15 +623,19 @@ const OrdersPage = () => {
 
                           <p className="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5">
                             <span>
-                              {totalItemsCount} {totalItemsCount === 1 ? "item" : "items"}
+                              {totalItemsCount}{" "}
+                              {totalItemsCount === 1 ? "item" : "items"}
                             </span>
                             <span className="opacity-50">&bull;</span>
                             <span>
-                              {new Date(order.createdAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
+                              {new Date(order.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )}
                             </span>
                           </p>
                         </div>
@@ -799,37 +803,41 @@ const OrdersPage = () => {
   };
 
   return (
-    <div className="pb-20 px-3 sm:px-4 lg:px-6">
+    <div className="pb-20">
       {/* ── Sticky header ── */}
-      <header className="h-20 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-xl z-30 border-b border-slate-100">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">
-            Order Management
-          </h2>
-          <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mt-0.5">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+      <header className="flex flex-col md:flex-row md:items-center justify-between sticky top-0 bg-white/90 backdrop-blur-xl z-30 py-4 gap-4 border-b border-slate-100/50">
+        <div className="hidden md:flex justify-between items-center w-full md:w-auto">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tighter text-slate-900">
+              Order Management
+            </h2>
+            <p className="text-[10px] md:text-xs text-slate-400 tracking-wider uppercase font-medium">
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
         </div>
-        {/* Search */}
-        <div className="relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-            search
-          </span>
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by ID or customer…"
-            className="pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm w-64 focus:outline-none focus:ring-2 focus:ring-slate-300 transition-all"
-          />
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
+          {/* Search */}
+          <div className="relative group w-full md:w-auto">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-slate-900 transition-colors">
+              search
+            </span>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by ID or customer…"
+              className="pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm w-full md:w-48 lg:w-64 focus:outline-none focus:ring-2 focus:ring-slate-300 transition-all text-slate-900"
+            />
+          </div>
         </div>
       </header>
 
       {/* ── Stat strip ── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 mb-6">
+      <div className="flex flex-nowrap w-full overflow-x-auto gap-4 mt-6 mb-6 pb-2 pb-2">
         {[
           {
             label: "Total Orders",
@@ -869,7 +877,7 @@ const OrdersPage = () => {
         ].map(({ label, value, icon, iconBg, iconColor }) => (
           <div
             key={label}
-            className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-3"
+            className="bg-white rounded-2xl p-4 lg:p-5 border border-slate-100 shadow-sm flex items-center gap-3 shrink-0 min-w-[180px] lg:min-w-[220px]"
           >
             <div
               className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}
@@ -882,10 +890,10 @@ const OrdersPage = () => {
               </span>
             </div>
             <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5 whitespace-nowrap">
                 {label}
               </p>
-              <p className="text-lg font-black text-slate-900 leading-none">
+              <p className="text-sm lg:text-lg font-black text-slate-900 leading-none whitespace-nowrap">
                 {value}
               </p>
             </div>
@@ -893,94 +901,57 @@ const OrdersPage = () => {
         ))}
       </div>
 
-      {/* ── Main table card ── */}
-      <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        {/* ── MOBILE-ONLY: Native Dropdown Filter ── */}
-        <div className="lg:hidden px-6 pt-5 pb-4 border-b border-slate-100">
-          <div className="relative">
-            <select
-              value={activeTab}
-              onChange={(e) => handleTabChange(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-black uppercase tracking-wider py-4 pl-5 pr-12 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-shadow"
-            >
-              {[
-                "ALL",
-                "PENDING",
-                "CONFIRMED",
-                "SHIPPED",
-                "DELIVERED",
-                "CANCELLED",
-              ].map((tab) => {
-                const cfg = STATUS_CONFIG[tab] || {};
-                const labelText =
-                  tab === "ALL" ? "All Orders" : cfg.label || tab;
-
-                // Keep the count inside the string
-                const count =
-                  tab === "ALL"
-                    ? tab === filterStatus && paginationInfo
-                      ? paginationInfo.total
-                      : "-"
-                    : tab === activeTab && paginationInfo
-                      ? paginationInfo.total
-                      : "-";
-
-                return (
-                  <option key={tab} value={tab}>
-                    {labelText} {count !== "-" ? `(${count})` : ""}
-                  </option>
-                );
-              })}
-            </select>
-            <span
-              className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-              style={{ fontVariationSettings: "'wght' 600" }}
-            >
-              unfold_more
-            </span>
+      {/* ── Filter Row (Matches ProductPage) ── */}
+      <div className="mt-4 md:mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Status filter pills (horizontally scrollable on mobile) */}
+        <div className="flex sm:items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 w-max ">
+            {[
+              "ALL",
+              "PENDING",
+              "CONFIRMED",
+              "SHIPPED",
+              "DELIVERED",
+              "CANCELLED",
+            ].map((tab) => {
+              const cfg = STATUS_CONFIG[tab] || {};
+              const count =
+                tab === "ALL"
+                  ? tab === filterStatus && paginationInfo
+                    ? paginationInfo.total
+                    : "-"
+                  : tab === activeTab && paginationInfo
+                    ? paginationInfo.total
+                    : "-";
+              return (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={`px-4 py-2 md:py-1.5 rounded-full text-[10px] md:text-[11px] font-bold uppercase tracking-widest transition-all shrink-0 flex items-center gap-1.5 ${
+                    activeTab === tab
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                  }`}
+                >
+                  {tab === "ALL" ? "All" : cfg.label || tab}
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-black flex items-center justify-center min-w-[20px] ${
+                      activeTab === tab
+                        ? "bg-white/20 text-white"
+                        : "bg-black/5 text-slate-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
+      </div>
 
-        {/* ── DESKTOP-ONLY: Tab filter row ── */}
-        <div className="hidden lg:flex px-6 pt-5 pb-4 border-b border-slate-100 items-center gap-2 overflow-x-auto no-scrollbar">
-          {[
-            "ALL",
-            "PENDING",
-            "CONFIRMED",
-            "SHIPPED",
-            "DELIVERED",
-            "CANCELLED",
-          ].map((tab) => {
-            const cfg = STATUS_CONFIG[tab] || {};
-            const count =
-              tab === "ALL"
-                ? tab === filterStatus && paginationInfo
-                  ? paginationInfo.total
-                  : "-"
-                : tab === activeTab && paginationInfo
-                  ? paginationInfo.total
-                  : "-";
-            return (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeTab === tab
-                    ? "bg-slate-900 text-white shadow"
-                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-                }`}
-              >
-                {tab === "ALL" ? "All" : cfg.label || tab}
-                <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${activeTab === tab ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
+      {/* ── Main table card ── */}
+      <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
         {/* Table */}
         <div className="overflow-x-auto">
           {filteredAdminOrders.length === 0 ? (
@@ -1098,7 +1069,7 @@ const OrdersPage = () => {
                       <td className="py-4 px-6">
                         <StatusBadge status={order.status} />
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-400 font-medium">
+                      <td className="py-4 px-6 text-xs text-slate-400 font-medium whitespace-nowrap">
                         {new Date(order.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",

@@ -90,13 +90,14 @@
   /* Custom scrollbar — editorial clean */
   ::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-surface-container-highest);
-    border-radius: 10px;
+    background: #e2e8f0; /* bg-slate-200 */
+    border-radius: 9999px;
   }
 }
 

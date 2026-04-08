@@ -94,9 +94,9 @@ const DashboardPage = () => {
   const moreCards = products.slice(0, 4);
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto bg-[#F0EEE6] rounded-[2.5rem] p-6 xl:p-8 shadow-2xl mt-4 border border-white/60 font-sans">
+    <div className="w-full max-w-[1800px] mx-auto bg-[#F0EEE6] rounded-[2.5rem] p-4 sm:p-8 xl:p-8 shadow-2xl mt-4 border border-white/60 font-sans">
       {/* ══ TOP NAV BAR ══ */}
-      <div className="flex items-center justify-between mb-8 px-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 px-2 gap-4">
         {/* Brand pill */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center">
@@ -128,7 +128,7 @@ const DashboardPage = () => {
         </div>
 
         {/* CTA */}
-        <div className="flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-3">
           <button
             onClick={() => navigate("/products")}
             className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest shadow-lg hover:bg-slate-700 transition-colors"
@@ -140,10 +140,10 @@ const DashboardPage = () => {
       </div>
 
       {/* ══ HERO + SIDE STACK ══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 mb-5">
         {/* ── HERO (8 cols, tall) ── */}
         <div
-          className="lg:col-span-8 relative rounded-[2rem] overflow-hidden cursor-pointer group min-h-[580px] xl:min-h-[680px] shadow-lg"
+          className="lg:col-span-8 relative rounded-[2rem] overflow-hidden cursor-pointer group min-h-[400px] sm:min-h-[600px] xl:min-h-[750px] shadow-lg"
           onClick={() => navigate("/products")}
         >
           <div className="absolute inset-0 z-0">
@@ -165,7 +165,7 @@ const DashboardPage = () => {
           {/* Bottom content */}
           <div className="absolute bottom-0 left-0 right-0 z-10 p-8 xl:p-10">
             {hero && <StockLabel stock={hero.stock} />}
-            <h2 className="text-4xl xl:text-5xl font-black text-white leading-tight tracking-tight mt-3 mb-2 max-w-lg drop-shadow">
+            <h2 className="text-3xl sm:text-5xl xl:text-6xl font-black text-white leading-tight tracking-tight mt-3 mb-2 max-w-lg drop-shadow">
               {hero?.name || "Discover Our Best"}
             </h2>
             {hero && (
@@ -191,7 +191,7 @@ const DashboardPage = () => {
         </div>
 
         {/* ── RIGHT COLUMN (4 cols) ── */}
-        <div className="lg:col-span-4 flex flex-col gap-5">
+        <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-8">
           {/* New Season Banner */}
           <div className="bg-slate-900 rounded-[2rem] px-7 py-6 shadow-lg flex items-center justify-between">
             <div>
@@ -229,7 +229,7 @@ const DashboardPage = () => {
             </div>
             <div className="flex-1 min-w-0">
               <StockLabel stock={card2?.stock ?? 99} />
-              <h4 className="font-black text-slate-900 text-base mt-2 leading-tight truncate">
+              <h4 title={card2?.name} className="text-sm sm:text-base font-bold text-slate-900 mt-2 leading-tight line-clamp-1">
                 {card2?.name || "Premium Pick"}
               </h4>
               <p className="text-slate-500 font-bold text-sm mt-1">
@@ -263,7 +263,7 @@ const DashboardPage = () => {
             </div>
             <div className="absolute bottom-5 left-5 right-5 z-10">
               <StockLabel stock={card3?.stock ?? 99} />
-              <h4 className="font-black text-white text-lg mt-1.5 leading-tight">
+              <h4 title={card3?.name} className="text-white text-sm sm:text-base font-bold mt-1.5 leading-tight line-clamp-1">
                 {card3?.name || "Top Seller"}
               </h4>
               <p className="text-white/70 font-bold text-sm">
@@ -308,7 +308,7 @@ const DashboardPage = () => {
         ].map(({ icon, label, sub, color, bg }) => (
           <div
             key={label}
-            className="bg-white rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm border border-slate-100"
+            className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-slate-100"
           >
             <div
               className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}
@@ -321,20 +321,20 @@ const DashboardPage = () => {
               </span>
             </div>
             <div>
-              <p className="font-black text-slate-900 text-sm leading-tight">
+              <p className="font-bold text-slate-900 text-xs sm:text-sm leading-tight">
                 {label}
               </p>
-              <p className="text-slate-400 font-medium text-xs">{sub}</p>
+              <p className="hidden sm:block text-slate-500 text-sm font-medium">{sub}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* ══ TRENDING + CATEGORIES ROW ══ */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-8 mt-4 sm:mt-8 mb-5">
         {/* Trending banner — 8 cols */}
         <div
-          className="md:col-span-8 relative rounded-[2rem] overflow-hidden cursor-pointer group min-h-[300px] shadow-lg"
+          className="sm:col-span-8 relative rounded-[2rem] overflow-hidden cursor-pointer group min-h-[220px] sm:min-h-[300px] shadow-lg"
           onClick={() => navigate("/products")}
         >
           <div className="absolute inset-0 z-0">
@@ -380,7 +380,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Category pills — 4 cols */}
-        <div className="md:col-span-4 flex flex-col gap-4">
+        <div className="sm:col-span-4 flex flex-col gap-4 min-h-[220px] sm:min-h-[300px]">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest px-1">
             Categories
           </h3>
@@ -466,7 +466,7 @@ const DashboardPage = () => {
                 )}
               </div>
               <div className="p-5">
-                <h4 className="font-black text-slate-900 text-sm leading-tight mb-1 truncate">
+                <h4 title={prod?.name} className="text-sm sm:text-base font-bold text-slate-900 leading-tight mb-1 line-clamp-1">
                   {prod?.name}
                 </h4>
                 <p className="text-slate-500 font-bold text-xs mb-3">
@@ -489,10 +489,10 @@ const DashboardPage = () => {
       </div>
 
       {/* ══ BOTTOM ROW: Limited + Spotlight + Banner ══ */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-8 mt-4 sm:mt-8 mb-5">
         {/* Limited Deal — lime card */}
         <div
-          className="md:col-span-4 bg-[#C8F04A] rounded-[2rem] p-8 shadow-sm relative overflow-hidden flex flex-col items-center text-center cursor-pointer group min-h-[340px]"
+          className="sm:col-span-4 bg-[#C8F04A] rounded-[2rem] p-8 shadow-sm relative overflow-hidden flex flex-col items-center text-center cursor-pointer group min-h-[180px] sm:min-h-[220px]"
           onClick={() => navigate("/products")}
         >
           <div className="absolute top-5 left-5 bg-slate-900 text-[#C8F04A] text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
@@ -530,7 +530,7 @@ const DashboardPage = () => {
 
         {/* Spotlight product — 4 cols */}
         <div
-          className="md:col-span-4 relative rounded-[2rem] overflow-hidden cursor-pointer group shadow-lg min-h-[340px]"
+          className="sm:col-span-4 relative rounded-[2rem] overflow-hidden cursor-pointer group shadow-lg min-h-[180px] sm:min-h-[220px]"
           onClick={() => navigate("/products")}
         >
           <div className="absolute inset-0 z-0">
@@ -564,7 +564,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Newsletter CTA — 4 cols */}
-        <div className="md:col-span-4 bg-slate-900 rounded-[2rem] p-8 shadow-lg flex flex-col justify-between min-h-[340px]">
+        <div className="sm:col-span-4 bg-slate-900 rounded-[2rem] p-8 shadow-lg flex flex-col justify-between min-h-[180px] sm:min-h-[220px]">
           <div>
             <div className="w-12 h-12 rounded-2xl bg-[#C8F04A] flex items-center justify-center mb-6">
               <span

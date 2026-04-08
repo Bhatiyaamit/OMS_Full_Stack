@@ -931,27 +931,38 @@ const ProductsPage = () => {
   return (
     <div className="pb-24">
       {/* Sticky header */}
-      <header className="h-20 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-xl z-30 mt-2">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tighter text-slate-900">
-            Inventory List
-          </h2>
-          <p className="text-xs text-outline tracking-wider uppercase font-medium">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+      <header className="flex flex-col md:flex-row md:items-center justify-between sticky top-0 bg-white/90 backdrop-blur-xl z-30 py-4 gap-4 border-b border-slate-100/50">
+        <div className="flex justify-between items-center w-full md:w-auto">
+          <div className="hidden md:block">
+            <h2 className="text-xl md:text-2xl font-bold tracking-tighter text-slate-900">
+              Inventory List
+            </h2>
+            <p className="text-[10px] md:text-xs text-outline tracking-wider uppercase font-medium">
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+          {isAdmin && (
+            <button
+              onClick={() => openDrawer()}
+              className="md:hidden bg-primary text-on-primary px-4 py-2 rounded-full text-xs font-semibold tracking-tight hover:bg-primary-dim transition-all shadow-sm active:scale-95 flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              New
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
           {/* Search */}
-          <div className="relative group">
+          <div className="relative group w-full md:w-auto">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-primary transition-colors">
               search
             </span>
             <input
-              className="pl-9 pr-4 py-2.5 bg-surface-container-low border-none rounded-full text-sm w-64 focus:ring-1 focus:ring-primary focus:bg-white transition-all"
+              className="pl-9 pr-4 py-2.5 bg-surface-container-low border-none rounded-full text-sm w-full md:w-48 lg:w-64 focus:ring-1 focus:ring-primary focus:bg-white transition-all"
               placeholder="Search products..."
               type="text"
               value={searchTerm}
@@ -961,7 +972,7 @@ const ProductsPage = () => {
           {isAdmin && (
             <button
               onClick={() => openDrawer()}
-              className="bg-primary text-on-primary px-6 py-2.5 rounded-full text-sm font-semibold tracking-tight hover:bg-primary-dim transition-all shadow-sm active:scale-95"
+              className="hidden md:block bg-primary text-on-primary px-6 py-2.5 rounded-full text-sm font-semibold tracking-tight hover:bg-primary-dim transition-all shadow-sm active:scale-95 shrink-0"
             >
               + New Product
             </button>
@@ -970,34 +981,36 @@ const ProductsPage = () => {
       </header>
 
       {/* Filter + sort row */}
-      <div className="mt-6 flex items-center justify-between gap-4 flex-wrap">
-        {/* Stock filter pills */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {[
-            { key: "all", label: "All" },
-            { key: "in_stock", label: "In Stock" },
-            { key: "low_stock", label: "Low Stock" },
-            { key: "out_stock", label: "Out of Stock" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setStockFilter(key)}
-              className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all ${
-                stockFilter === key
-                  ? "bg-primary text-on-primary shadow-sm"
-                  : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+      <div className="mt-4 md:mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Stock filter pills (horizontally scrollable on mobile) */}
+        <div className="flex sm:items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 w-max">
+            {[
+              { key: "all", label: "All" },
+              { key: "in_stock", label: "In Stock" },
+              { key: "low_stock", label: "Low Stock" },
+              { key: "out_stock", label: "Out of Stock" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setStockFilter(key)}
+                className={`px-4 py-2 md:py-1.5 rounded-full text-[10px] md:text-[11px] font-bold uppercase tracking-widest transition-all shrink-0 ${
+                  stockFilter === key
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Sort select */}
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="bg-surface-container-low border-none rounded-full text-xs px-4 py-2 font-semibold text-on-surface-variant focus:ring-1 focus:ring-primary"
+          className="bg-surface-container-low border-none rounded-full text-sm md:text-xs px-4 py-2 font-semibold text-on-surface-variant focus:ring-1 focus:ring-primary w-full sm:w-auto"
         >
           <option value="newest">Sort: Newest</option>
           <option value="price_asc">Price ↑</option>
@@ -1007,28 +1020,90 @@ const ProductsPage = () => {
         </select>
       </div>
 
-      {/* Table */}
+      {/* Views */}
       <div className="mt-4">
-        <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
-          <table className="min-w-190 w-full border-collapse text-left">
+        {/* ── MOBILE CARD VIEW (< md) ── */}
+        <div className="md:hidden flex flex-col gap-3">
+          {displayedProducts.length === 0 && (
+            <div className="py-12 text-center bg-surface-container-lowest rounded-xl shadow-sm border border-slate-100">
+               <span className="material-symbols-outlined text-4xl text-outline-variant block mb-2">
+                 inventory_2
+               </span>
+               <p className="text-sm text-on-surface-variant font-medium">No products found.</p>
+            </div>
+          )}
+          {displayedProducts.map((product) => {
+            const badge = getStockBadge(product.stock);
+            return (
+              <div key={product.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex gap-4">
+                 <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-surface-container flex items-center justify-center">
+                   {product.image ? (
+                     <img
+                       src={getImageUrl(product.image)}
+                       alt={product.name}
+                       className="w-full h-full object-cover shadow-inner"
+                     />
+                   ) : (
+                     <span className="material-symbols-outlined text-outline-variant text-[24px]">image</span>
+                   )}
+                 </div>
+                 <div className="flex-1 min-w-0 flex flex-col justify-between">
+                   <div>
+                     <h3 className="text-sm font-bold text-slate-900 truncate">{product.name}</h3>
+                     <p className="text-[10px] font-mono text-outline uppercase mt-0.5">
+                       PRD-{product.id.slice(0, 8)}
+                     </p>
+                   </div>
+                   <div className="flex items-center justify-between mt-2">
+                     <span className="font-black text-sm text-slate-900">₹{parseFloat(product.price).toLocaleString()}</span>
+                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${badge.classes}`}>
+                       {product.stock} {badge.text}
+                     </span>
+                   </div>
+                 </div>
+                 {/* Mobile Actions Dropdown / Icons */}
+                 {isAdmin && (
+                   <div className="flex flex-col items-center justify-start gap-2 shrink-0 border-l border-slate-100 pl-3">
+                     <button
+                       onClick={() => openDrawer(product)}
+                       className="w-8 h-8 rounded-full bg-slate-50 text-slate-500 hover:text-primary transition-colors flex items-center justify-center"
+                     >
+                       <span className="material-symbols-outlined text-[16px]">edit</span>
+                     </button>
+                     <button
+                       onClick={() => handleDelete(product.id)}
+                       className="w-8 h-8 rounded-full bg-slate-50 text-slate-500 hover:text-error transition-colors flex items-center justify-center"
+                     >
+                       <span className="material-symbols-outlined text-[16px]">delete</span>
+                     </button>
+                   </div>
+                 )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── DESKTOP/TABLET TABLE VIEW (>= md) ── */}
+        <div className="hidden md:block bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-slate-100/60">
+          <table className="w-full border-collapse text-left">
             <thead>
               <tr className="bg-surface-container-low text-on-surface-variant">
-                <th className="py-4 px-6 text-[10px] font-semibold uppercase tracking-widest">
+                <th className="py-3 px-4 lg:py-4 lg:px-6 text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap">
                   Name
                 </th>
-                <th className="py-4 px-6 text-[10px] font-semibold uppercase tracking-widest">
+                <th className="py-3 px-4 lg:py-4 lg:px-6 text-[10px] font-semibold uppercase tracking-widest hidden lg:table-cell">
                   SKU
                 </th>
-                <th className="py-4 px-6 text-[10px] font-semibold uppercase tracking-widest">
+                <th className="py-3 px-4 lg:py-4 lg:px-6 text-[10px] font-semibold uppercase tracking-widest">
                   Price
                 </th>
-                <th className="py-4 px-6 text-[10px] font-semibold uppercase tracking-widest">
+                <th className="py-3 px-4 lg:py-4 lg:px-6 text-[10px] font-semibold uppercase tracking-widest hidden sm:table-cell">
                   Stock
                 </th>
-                <th className="py-4 px-6 text-[10px] font-semibold uppercase tracking-widest">
+                <th className="py-3 px-4 lg:py-4 lg:px-6 text-[10px] font-semibold uppercase tracking-widest">
                   Status
                 </th>
-                <th className="py-4 px-6 text-[10px] font-semibold uppercase tracking-widest text-right">
+                <th className="py-3 px-4 lg:py-4 lg:px-6 text-[10px] font-semibold uppercase tracking-widest text-right">
                   Actions
                 </th>
               </tr>
@@ -1055,63 +1130,64 @@ const ProductsPage = () => {
                     key={product.id}
                     className="hover:bg-surface-container-low/50 transition-colors group"
                   >
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-4">
+                    <td className="py-3 px-4 lg:py-4 lg:px-6">
+                      <div className="flex items-center gap-3 lg:gap-4">
                         {product.image ? (
                           <img
                             src={getImageUrl(product.image)}
                             alt={product.name}
-                            className="w-12 h-12 rounded-lg object-cover bg-surface-container shadow-inner"
+                            className="w-10 h-10 lg:w-12 lg:h-12 shrink-0 rounded-lg object-cover bg-surface-container shadow-inner"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center">
-                            <span className="material-symbols-outlined text-outline-variant">
+                          <div className="w-10 h-10 lg:w-12 lg:h-12 shrink-0 rounded-lg bg-surface-container flex items-center justify-center">
+                            <span className="material-symbols-outlined text-outline-variant text-[20px]">
                               image
                             </span>
                           </div>
                         )}
-                        <p className="text-sm font-semibold text-on-surface">
+                        <p className="text-xs lg:text-sm font-semibold text-on-surface">
                           {product.name}
+                          <span className="block lg:hidden text-[10px] font-mono text-outline font-normal mt-1">PRD-{product.id.slice(0,6)}</span>
                         </p>
                       </div>
                     </td>
-                    <td className="py-4 px-6 font-mono text-xs text-on-surface-variant">
+                    <td className="py-3 px-4 lg:py-4 lg:px-6 font-mono text-xs text-on-surface-variant hidden lg:table-cell">
                       PRD-{product.id.slice(0, 8).toUpperCase()}
                     </td>
-                    <td className="py-4 px-6 text-sm font-medium">
+                    <td className="py-3 px-4 lg:py-4 lg:px-6 text-xs lg:text-sm font-medium whitespace-nowrap">
                       ₹{parseFloat(product.price).toLocaleString()}
                     </td>
                     <td
-                      className={`py-4 px-6 text-sm font-bold ${product.stock === 0 ? "text-error" : product.stock < 10 ? "text-amber-600" : "text-on-surface"}`}
+                      className={`py-3 px-4 lg:py-4 lg:px-6 text-xs lg:text-sm font-bold hidden sm:table-cell ${product.stock === 0 ? "text-error" : product.stock < 10 ? "text-amber-600" : "text-on-surface"}`}
                     >
                       {product.stock}
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-3 px-4 lg:py-4 lg:px-6">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge.classes}`}
+                        className={`px-2 lg:px-2.5 py-1 rounded-full text-[9px] lg:text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${badge.classes}`}
                       >
                         {badge.text}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-right">
+                    <td className="py-3 px-4 lg:py-4 lg:px-6 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {isAdmin && (
                           <>
                             <button
                               onClick={() => openDrawer(product)}
-                              className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                              className="p-1.5 lg:p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-colors"
                               title="Edit"
                             >
-                              <span className="material-symbols-outlined text-[18px]">
+                              <span className="material-symbols-outlined text-[16px] lg:text-[18px]">
                                 edit
                               </span>
                             </button>
                             <button
                               onClick={() => handleDelete(product.id)}
-                              className="p-2 rounded-lg text-slate-400 hover:text-error hover:bg-error/5 transition-colors"
+                              className="p-1.5 lg:p-2 rounded-lg text-slate-400 hover:text-error hover:bg-error/5 transition-colors"
                               title="Delete"
                             >
-                              <span className="material-symbols-outlined text-[18px]">
+                              <span className="material-symbols-outlined text-[16px] lg:text-[18px]">
                                 delete
                               </span>
                             </button>
