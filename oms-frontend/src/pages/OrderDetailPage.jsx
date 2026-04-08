@@ -414,17 +414,30 @@ const OrderDetailPage = () => {
             <h2 className="text-lg font-bold mb-4 text-on-surface">Payment</h2>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary text-xl">
-                  credit_card
-                </span>
-                <p className="text-sm font-semibold text-on-surface">
-                  Cash on Delivery
-                </p>
+                {order.stripePaymentId ? (
+                  <React.Fragment>
+                    <span className="material-symbols-outlined text-primary text-xl">
+                      credit_card
+                    </span>
+                    <p className="text-sm font-semibold text-on-surface">
+                      Card Payment
+                    </p>
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    <span className="material-symbols-outlined text-primary text-xl">
+                      local_shipping
+                    </span>
+                    <p className="text-sm font-semibold text-on-surface">
+                      Cash on Delivery
+                    </p>
+                  </React.Fragment>
+                )}
               </div>
 
               <div className="flex items-start gap-3">
                 {order.stripePaymentId ? (
-                  <reactFragment>
+                  <React.Fragment>
                     <span className="material-symbols-outlined text-green-600 text-xl">
                       check_circle
                     </span>
@@ -436,9 +449,9 @@ const OrderDetailPage = () => {
                         {order.stripePaymentId}
                       </p>
                     </div>
-                  </reactFragment>
+                  </React.Fragment>
                 ) : (
-                  <reactFragment>
+                  <React.Fragment>
                     <span className="material-symbols-outlined text-amber-500 text-xl">
                       schedule
                     </span>
@@ -447,17 +460,13 @@ const OrderDetailPage = () => {
                         Payment Pending
                       </p>
                       <p className="text-xs text-on-surface-variant mt-0.5">
-                        Pay on delivery
+                        Amount to be paid upon delivery
                       </p>
                     </div>
-                  </reactFragment>
+                  </React.Fragment>
                 )}
               </div>
             </div>
-
-            <p className="text-xs text-on-surface-variant italic mt-5 pt-4 border-t border-surface-container">
-              Stripe payment integration coming soon
-            </p>
           </div>
         </div>
       </div>

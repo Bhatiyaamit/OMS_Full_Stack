@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   useAllOrders,
   useMyOrders,
@@ -10,6 +10,12 @@ import useAuthStore from "../store/authStore";
 import { toast } from "sonner";
 import { Spin, Drawer, Divider, Modal, Steps, Pagination, Avatar } from "antd";
 import { useNavigate } from "react-router-dom";
+
+const getImageUrl = (image) => {
+  if (!image) return null;
+  if (image.startsWith("http")) return image;
+  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+};
 
 /* ── Status config ── */
 const STATUS_CONFIG = {
@@ -333,11 +339,7 @@ const OrdersPage = () => {
                   <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {item.product?.image ? (
                       <img
-                        src={
-                          item.product.image.startsWith("http")
-                            ? item.product.image
-                            : `http://localhost:5011${item.product.image}`
-                        }
+                        src={getImageUrl(item.product?.image)}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
                       />
@@ -578,11 +580,7 @@ const OrdersPage = () => {
                   const totalItemsCount =
                     order.items?.reduce((acc, i) => acc + i.quantity, 0) || 0;
                   const firstProduct = order.items?.[0]?.product;
-                  const thumbnailSrc = firstProduct?.image?.startsWith("http")
-                    ? firstProduct.image
-                    : firstProduct?.image
-                      ? `http://localhost:5011${firstProduct.image}`
-                      : null;
+                  const thumbnailSrc = getImageUrl(firstProduct?.image);
 
                   return (
                     <div
@@ -695,11 +693,7 @@ const OrdersPage = () => {
                                 <div className="w-12 h-12 bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
                                   {item.product?.image ? (
                                     <img
-                                      src={
-                                        item.product.image.startsWith("http")
-                                          ? item.product.image
-                                          : `http://localhost:5011${item.product.image}`
-                                      }
+                                      src={getImageUrl(item.product?.image)}
                                       alt={item.product?.name}
                                       className="w-full h-full object-cover"
                                     />
@@ -1033,11 +1027,7 @@ const OrdersPage = () => {
                       <td className="py-4 px-6 text-[11px] font-bold text-slate-500">
                         <Avatar.Group size="small" maxCount={2}>
                           {order.items?.map((item, idx) => {
-                            const imgSrc = item.product?.image?.startsWith(
-                              "http",
-                            )
-                              ? item.product.image
-                              : `http://localhost:5011${item.product?.image}`;
+                            const imgSrc = getImageUrl(item.product?.image);
                             return (
                               <Avatar
                                 key={idx}

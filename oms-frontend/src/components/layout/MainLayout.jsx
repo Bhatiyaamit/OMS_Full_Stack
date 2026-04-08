@@ -42,9 +42,9 @@ const MainLayout = () => {
   const navItems = [
     {
       label: "Dashboard",
-      path: "/dashboard",
+      path: "/admin/dashboard",
       icon: "dashboard",
-      roles: ["ADMIN", "MANAGER", "CUSTOMER"],
+      roles: ["ADMIN", "MANAGER"],
     },
     {
       label: "Orders",

@@ -11,6 +11,7 @@ import RoleBasedLayout from "./components/layout/RoleBasedLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProductsPage from "./pages/ProductsPage";
 import CartPage from "./pages/CartPage";
@@ -68,6 +69,10 @@ const AuthRoute = ({ children }) => {
 function App() {
   const { user } = useAuthStore();
   const hydrateFromServer = useCartStore((s) => s.hydrateFromServer);
+  const defaultDashboardPath =
+    user?.role === "ADMIN" || user?.role === "MANAGER"
+      ? "/admin/dashboard"
+      : "/dashboard";
 
   // On page load — if user is already logged in, pull their cart from DB
   useEffect(() => {
@@ -110,16 +115,27 @@ function App() {
             ════════════════════════════════════════════════ */}
         <Route element={<RoleBasedLayout />}>
           {/* ── / → always redirect to /dashboard ── */}
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<Navigate to={defaultDashboardPath} replace />} />
 
           {/* ── /dashboard ──────────────────────────────
-              FULLY PUBLIC — no guard at all.
-              DashboardPage renders different UI based on role:
-                Guest (user = null)  → customer bento product grid
-                CUSTOMER             → bento grid + order stats
-                ADMIN / MANAGER      → KPI cards + charts + table
+              FULLY PUBLIC storefront landing page for
+              guest and customer users.
               ─────────────────────────────────────────── */}
           <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* ── /admin/dashboard ────────────────────────
+              ADMIN / MANAGER ONLY.
+              Dedicated analytics dashboard for sales,
+              orders, fulfillment and inventory health.
+              ─────────────────────────────────────────── */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboardPage />
+              </AdminRoute>
+            }
+          />
 
           {/* ── /products ───────────────────────────────
               FULLY PUBLIC — guests, customers, admin all see it.
@@ -226,9 +242,10 @@ function App() {
           />
 
           {/* ── catch all ───────────────────────────────
-              Any unknown URL → back to /dashboard
+              Any unknown URL → back to the correct
+              dashboard based on current role
               ─────────────────────────────────────────── */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to={defaultDashboardPath} replace />} />
         </Route>
         {/* end RoleBasedLayout */}
       </Routes>

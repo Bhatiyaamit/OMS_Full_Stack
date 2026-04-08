@@ -1,6 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useProducts } from "../hooks/useProducts";
 import { Spin } from "antd";
+import useAuthStore from "../store/authStore";
 
 const getImageUrl = (image) => {
   if (!image) return null;
@@ -68,8 +69,13 @@ const ProductImg = ({ image, name, className = "" }) =>
  *  PUBLIC DASHBOARD — no auth, pure product showcase
  * ══════════════════════════════════════════════════════════ */
 const DashboardPage = () => {
+  const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const { data: productsData, isLoading } = useProducts();
+
+  if (user?.role === "ADMIN" || user?.role === "MANAGER") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   if (isLoading) {
     return (
@@ -85,9 +91,6 @@ const DashboardPage = () => {
   const hero = products[0];
   const card2 = products[1];
   const card3 = products[2];
-  const card4 = products[3];
-  const card5 = products[4];
-  const card6 = products[5];
   const trending = products[6] || products[0];
   const limitedDeal = products[7] || products[1];
   const spotlight = products[8] || products[2];
