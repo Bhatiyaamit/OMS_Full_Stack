@@ -36,7 +36,7 @@ const updateProfile = async (formData) => {
   const res = await api.put("/auth/profile", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return res.data.data;
+  return res.data;
 };
 
 // ── Helper ────────────────────────────────────────────────
@@ -97,7 +97,7 @@ const ProfilePage = () => {
     mutationFn: updateProfile,
     onSuccess: (updated) => {
       setUser(updated);
-      queryClient.invalidateQueries(["profile"]);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("Profile updated", {
         description: "Your changes have been saved.",
       });

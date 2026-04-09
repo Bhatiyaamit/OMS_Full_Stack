@@ -199,7 +199,7 @@ const DashboardPage = () => {
           <div className="bg-slate-900 rounded-[2rem] px-7 py-6 shadow-lg flex items-center justify-between">
             <div>
               <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">
-                2025 Collection
+                2026 Collection
               </p>
               <h3 className="text-2xl font-black text-white leading-tight">
                 New Season
@@ -628,7 +628,7 @@ const DashboardPage = () => {
       <div className="mt-8 pt-6 border-t border-black/10 flex flex-col md:flex-row items-center justify-between gap-4 px-2">
         <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
           <span className="material-symbols-outlined text-sm">storefront</span>
-          <span>© 2025 ShopNest · All rights reserved</span>
+          <span>© 2026 ShopNest · All rights reserved</span>
         </div>
         <div className="flex items-center gap-6">
           {["Privacy", "Terms", "Contact", "FAQ"].map((t) => (

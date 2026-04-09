@@ -22,6 +22,12 @@ const useAuthStore = create(
           isAuthenticated: true,
         }),
 
+      // Just update user data
+      setUser: (userData) =>
+        set({
+          user: userData,
+        }),
+
       // Called on logout or 401 interception
       clearAuth: () =>
         set({
