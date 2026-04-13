@@ -86,7 +86,7 @@ const ProductsPage = () => {
   const getImageUrl = (image) => {
     if (!image) return null;
     if (image.startsWith("http")) return image;
-    return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+    return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || ""}${image}`;
   };
 
   // ── Derived: displayed products (filter + sort) ──

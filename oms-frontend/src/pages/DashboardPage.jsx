@@ -13,7 +13,7 @@ import show_6 from "../assets/dashboard-showcase/show_6.jpg";
 const getImageUrl = (image) => {
   if (!image) return null;
   if (image.startsWith("http")) return image;
-  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || ""}${image}`;
 };
 
 /* ── Tag Badge ── */
@@ -184,7 +184,6 @@ const DashboardPage = () => {
           <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none px-8 pt-6 pb-20 bg-gradient-to-b from-black/55 via-black/20 to-transparent">
             <h3 className="text-xl sm:text-2xl xl:text-3xl font-semibold text-white tracking-tight drop-shadow">
               Trending Now.{" "}
-              
               <span className="text-white/70 font-medium hidden sm:block sm:text-xl xl:text-2xl">
                 Discover our newest arrivals.
               </span>

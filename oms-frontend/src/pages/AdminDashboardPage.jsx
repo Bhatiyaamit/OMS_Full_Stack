@@ -50,7 +50,7 @@ const STATUS_STYLES = {
 const getImageUrl = (image) => {
   if (!image) return null;
   if (image.startsWith("http")) return image;
-  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || ""}${image}`;
 };
 
 const fmt = (v) =>
@@ -597,7 +597,9 @@ const HeroBanner = ({ stats, refetch, isFetching }) => (
         </h1>
         <p className="mt-4 text-sm sm:text-base text-slate-500 leading-relaxed max-w-md">
           Everything's running smoothly. We processed{" "}
-          <strong className="text-slate-900 font-extrabold">{fmtCompact(stats?.totalOrders)}</strong>{" "}
+          <strong className="text-slate-900 font-extrabold">
+            {fmtCompact(stats?.totalOrders)}
+          </strong>{" "}
           orders so far.
         </p>
 

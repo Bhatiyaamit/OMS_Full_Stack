@@ -1,8 +1,7 @@
 import axios from "axios";
 import useAuthStore from "../store/authStore";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5011/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 //"http://192.168.0.59:5011/api"
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -23,7 +22,7 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // ── Response interceptor ─────────────────────────────────
@@ -40,9 +39,15 @@ axiosInstance.interceptors.response.use(
       clearAuth();
 
       // Public routes that guests are allowed to visit — do NOT redirect
-      const publicPaths = ["/dashboard", "/products", "/cart", "/login", "/register"];
+      const publicPaths = [
+        "/dashboard",
+        "/products",
+        "/cart",
+        "/login",
+        "/register",
+      ];
       const isPublicPage = publicPaths.some((p) =>
-        window.location.pathname.startsWith(p)
+        window.location.pathname.startsWith(p),
       );
 
       // Only hard-redirect to /login when the user is on a private page
@@ -53,9 +58,9 @@ axiosInstance.interceptors.response.use(
 
     // Reject with backend error payload or fallback message
     return Promise.reject(
-      error.response?.data || { message: error.message || "Network error" }
+      error.response?.data || { message: error.message || "Network error" },
     );
-  }
+  },
 );
 
 export default axiosInstance;

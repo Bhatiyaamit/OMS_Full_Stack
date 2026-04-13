@@ -8,7 +8,7 @@ import CheckoutAuthModal from "../cart/CheckoutAuthModal";
 const getImageUrl = (image) => {
   if (!image) return null;
   if (image.startsWith("http")) return image;
-  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || ""}${image}`;
 };
 
 const CustomerLayout = () => {
@@ -88,8 +88,11 @@ const CustomerLayout = () => {
           <CartIcon />
 
           {user ? (
-            <div ref={menuRef} className="relative border-l border-outline-variant/30 ml-1 md:ml-2 pl-2 md:pl-4 flex items-center">
-              <div 
+            <div
+              ref={menuRef}
+              className="relative border-l border-outline-variant/30 ml-1 md:ml-2 pl-2 md:pl-4 flex items-center"
+            >
+              <div
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="flex items-center gap-2 md:gap-3 cursor-pointer relative z-50"
               >
@@ -110,7 +113,7 @@ const CustomerLayout = () => {
               </div>
 
               {/* Click-based Dropdown Menu */}
-              <div 
+              <div
                 className={`absolute top-12 right-0 w-40 bg-surface-container-lowest rounded-md shadow-lg transition-all duration-200 p-2 flex flex-col gap-1 z-50 origin-top-right select-none ${isProfileMenuOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 pointer-events-none invisible"}`}
               >
                 <button

@@ -11,7 +11,7 @@ import CheckoutAuthModal from "./CheckoutAuthModal";
 const getImageUrl = (image) => {
   if (!image) return null;
   if (image.startsWith("http")) return image;
-  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || ""}${image}`;
 };
 
 /* ══════════════════════════════════════════════════════════
@@ -22,20 +22,23 @@ const getImageUrl = (image) => {
  *    onClose  () => void
  * ══════════════════════════════════════════════════════════ */
 const CartDrawer = ({ open, onClose }) => {
-  const navigate   = useNavigate();
-  const { user }   = useAuthStore();
-  const isGuest    = !user;
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isGuest = !user;
 
-  const items      = useCartStore((s) => s.items);
-  const addItem    = useCartStore((s) => s.addItem);
+  const items = useCartStore((s) => s.items);
+  const addItem = useCartStore((s) => s.addItem);
   const removeItem = useCartStore((s) => s.removeItem);
   const deleteItem = useCartStore((s) => s.deleteItem);
-  const clearCart  = useCartStore((s) => s.clearCart);
+  const clearCart = useCartStore((s) => s.clearCart);
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-  const totalPrice = items.reduce((s, i) => s + parseFloat(i.price) * i.quantity, 0);
+  const totalPrice = items.reduce(
+    (s, i) => s + parseFloat(i.price) * i.quantity,
+    0,
+  );
 
   const handleCheckout = () => {
     if (isGuest) {
@@ -67,9 +70,9 @@ const CartDrawer = ({ open, onClose }) => {
             flexDirection: "column",
             height: "100%",
           },
-          wrapper: { 
+          wrapper: {
             width: 420,
-            boxShadow: "-8px 0 40px rgba(0,0,0,0.12)" 
+            boxShadow: "-8px 0 40px rgba(0,0,0,0.12)",
           },
         }}
       >

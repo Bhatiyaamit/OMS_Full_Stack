@@ -42,7 +42,7 @@ const CartPage = () => {
   const getImageUrl = (image) => {
     if (!image) return null;
     if (image.startsWith("http")) return image;
-    return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+    return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || ""}${image}`;
   };
 
   const [initiatingPayment, setInitiatingPayment] = useState(false);
@@ -76,7 +76,7 @@ const CartPage = () => {
       const res = await api.post("/orders/create-payment-intent", {
         items: items.map((i) => ({
           productId: i.id,
-          quantity:  i.quantity,
+          quantity: i.quantity,
         })),
       });
 
@@ -90,13 +90,14 @@ const CartPage = () => {
           totalAmount,
           items: items.map((i) => ({
             productId: i.id,
-            quantity:  i.quantity,
+            quantity: i.quantity,
           })),
         },
       });
     } catch (err) {
       toast.error("Could not initiate payment", {
-        description: err?.response?.data?.message || err?.message || "Please try again.",
+        description:
+          err?.response?.data?.message || err?.message || "Please try again.",
       });
     } finally {
       setInitiatingPayment(false);

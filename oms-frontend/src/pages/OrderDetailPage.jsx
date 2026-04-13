@@ -10,7 +10,7 @@ import InvoicePDF from "../components/InvoicePDF";
 const getImageUrl = (image) => {
   if (!image) return null;
   if (image.startsWith("http")) return image;
-  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5011"}${image}`;
+  return `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || ""}${image}`;
 };
 
 const STATUS_CONFIG = {
