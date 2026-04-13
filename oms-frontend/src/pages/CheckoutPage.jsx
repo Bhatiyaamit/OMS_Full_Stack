@@ -11,17 +11,15 @@ import { toast } from "sonner";
 import api from "../api/axiosInstance";
 import useCartStore from "../store/cartStore";
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const CheckoutForm = ({ items, totalAmount }) => {
-  const stripe     = useStripe();
-  const elements   = useElements();
-  const navigate   = useNavigate();
-  const clearCart  = useCartStore((s) => s.clearCart);
-  
-  const [paying, setPaying]   = useState(false);
+  const stripe = useStripe();
+  const elements = useElements();
+  const navigate = useNavigate();
+  const clearCart = useCartStore((s) => s.clearCart);
+
+  const [paying, setPaying] = useState(false);
   const [cardError, setCardError] = useState("");
 
   const handlePay = async (e) => {
@@ -75,7 +73,6 @@ const CheckoutForm = ({ items, totalAmount }) => {
 
   return (
     <form onSubmit={handlePay}>
-
       {/* Stripe PaymentElement — renders card input */}
       <div className="mb-6">
         <PaymentElement
@@ -88,14 +85,14 @@ const CheckoutForm = ({ items, totalAmount }) => {
 
       {/* Card error message */}
       {cardError && (
-        <div className="flex items-center gap-2 bg-red-50 border
-          border-red-100 rounded-xl px-4 py-3 mb-6">
+        <div
+          className="flex items-center gap-2 bg-red-50 border
+          border-red-100 rounded-xl px-4 py-3 mb-6"
+        >
           <span className="material-symbols-outlined text-error text-base">
             error
           </span>
-          <p className="text-sm font-medium text-error">
-            {cardError}
-          </p>
+          <p className="text-sm font-medium text-error">{cardError}</p>
         </div>
       )}
 
@@ -113,18 +110,19 @@ const CheckoutForm = ({ items, totalAmount }) => {
       >
         {paying ? (
           <>
-            <span className="material-symbols-outlined
-              text-base animate-spin">
+            <span
+              className="material-symbols-outlined
+              text-base animate-spin"
+            >
               progress_activity
             </span>
             Processing Payment...
           </>
         ) : (
           <>
-            <span className="material-symbols-outlined text-base">
-              lock
-            </span>
-            Pay ₹{parseFloat(totalAmount).toLocaleString("en-IN", {
+            <span className="material-symbols-outlined text-base">lock</span>
+            Pay ₹
+            {parseFloat(totalAmount).toLocaleString("en-IN", {
               minimumFractionDigits: 2,
             })}
           </>
@@ -132,11 +130,11 @@ const CheckoutForm = ({ items, totalAmount }) => {
       </button>
 
       {/* Secure badge */}
-      <div className="flex items-center justify-center gap-2
-        mt-4 text-xs text-on-surface-variant">
-        <span className="material-symbols-outlined text-sm">
-          lock
-        </span>
+      <div
+        className="flex items-center justify-center gap-2
+        mt-4 text-xs text-on-surface-variant"
+      >
+        <span className="material-symbols-outlined text-sm">lock</span>
         Secured by Stripe · 256-bit SSL encryption
       </div>
     </form>
@@ -147,17 +145,20 @@ const CheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { clientSecret, totalAmount, items } =
-    location.state || {};
+  const { clientSecret, totalAmount, items } = location.state || {};
 
   // Guard — if user navigates here directly without state
   if (!clientSecret || !items) {
     return (
       <div className="max-w-lg mx-auto py-20 text-center">
-        <div className="bg-surface-container-lowest rounded-2xl
-          p-12 shadow-sm border border-surface-container">
-          <span className="material-symbols-outlined
-            text-5xl text-outline-variant mb-6 block">
+        <div
+          className="bg-surface-container-lowest rounded-2xl
+          p-12 shadow-sm border border-surface-container"
+        >
+          <span
+            className="material-symbols-outlined
+            text-5xl text-outline-variant mb-6 block"
+          >
             shopping_cart_off
           </span>
           <h2 className="text-xl font-bold text-on-surface mb-2">
@@ -183,31 +184,31 @@ const CheckoutPage = () => {
   const appearance = {
     theme: "stripe",
     variables: {
-      colorPrimary:       "#005cba",
-      colorBackground:    "#f2f4f6",
-      colorText:          "#2d3338",
-      colorDanger:        "#9f403d",
-      fontFamily:         "Inter, sans-serif",
-      borderRadius:       "12px",
-      spacingUnit:        "4px",
+      colorPrimary: "#005cba",
+      colorBackground: "#f2f4f6",
+      colorText: "#2d3338",
+      colorDanger: "#9f403d",
+      fontFamily: "Inter, sans-serif",
+      borderRadius: "12px",
+      spacingUnit: "4px",
     },
     rules: {
       ".Input": {
         backgroundColor: "#f2f4f6",
-        border:          "none",
-        boxShadow:       "none",
-        padding:         "14px 16px",
+        border: "none",
+        boxShadow: "none",
+        padding: "14px 16px",
       },
       ".Input:focus": {
         boxShadow: "0 0 0 1px #005cba",
       },
       ".Label": {
-        fontWeight:     "600",
-        fontSize:       "11px",
-        textTransform:  "uppercase",
-        letterSpacing:  "0.1em",
-        color:          "#596065",
-        marginBottom:   "8px",
+        fontWeight: "600",
+        fontSize: "11px",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        color: "#596065",
+        marginBottom: "8px",
       },
     },
   };
@@ -220,7 +221,6 @@ const CheckoutPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto py-10 px-4">
-
       {/* Header */}
       <div className="mb-10">
         <button
@@ -234,8 +234,10 @@ const CheckoutPage = () => {
           </span>
           Back to Cart
         </button>
-        <h1 className="text-3xl font-bold tracking-tight
-          text-on-surface">
+        <h1
+          className="text-3xl font-bold tracking-tight
+          text-on-surface"
+        >
           Secure Checkout
         </h1>
         <p className="text-sm text-on-surface-variant mt-1">
@@ -244,80 +246,71 @@ const CheckoutPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
         {/* ── Left — Stripe Payment Form ── */}
         <div className="lg:col-span-7">
-          <div className="bg-surface-container-lowest rounded-2xl
-            shadow-sm border border-surface-container p-8">
-
-            <h2 className="text-lg font-bold text-on-surface
-              tracking-tight mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined
-                text-primary text-xl">
+          <div
+            className="bg-surface-container-lowest rounded-2xl
+            shadow-sm border border-surface-container p-8"
+          >
+            <h2
+              className="text-lg font-bold text-on-surface
+              tracking-tight mb-6 flex items-center gap-2"
+            >
+              <span
+                className="material-symbols-outlined
+                text-primary text-xl"
+              >
                 credit_card
               </span>
               Payment Details
             </h2>
 
             <Elements stripe={stripePromise} options={options}>
-              <CheckoutForm
-                items={items}
-                totalAmount={totalAmount}
-              />
+              <CheckoutForm items={items} totalAmount={totalAmount} />
             </Elements>
-
-          </div>
-
-          {/* Test card hint — remove in production */}
-          <div className="mt-4 bg-blue-50 border border-blue-100
-            rounded-xl p-4 flex items-start gap-3">
-            <span className="material-symbols-outlined
-              text-blue-500 text-lg mt-0.5">
-              info
-            </span>
-            <div>
-              <p className="text-xs font-bold text-blue-700 mb-1">
-                Test Mode — Use these card details
-              </p>
-              <p className="text-xs text-blue-600 font-mono">
-                Card: 4000 0035 6000 0008
-              </p>
-              <p className="text-xs text-blue-600 font-mono">
-                Expiry: 12/26 · CVV: 123 · Name: Any
-              </p>
-            </div>
           </div>
         </div>
 
         {/* ── Right — Order Summary ── */}
         <div className="lg:col-span-5">
-          <div className="bg-surface-container-lowest rounded-2xl
+          <div
+            className="bg-surface-container-lowest rounded-2xl
             shadow-sm border border-surface-container p-8
-            sticky top-24">
-
-            <h2 className="text-lg font-bold text-on-surface
-              tracking-tight mb-6">
+            sticky top-24"
+          >
+            <h2
+              className="text-lg font-bold text-on-surface
+              tracking-tight mb-6"
+            >
               Order Summary
             </h2>
 
             {/* Items list */}
             <div className="space-y-4 mb-6">
               {items.map((item, i) => (
-                <div key={i}
+                <div
+                  key={i}
                   className="flex items-center justify-between
                     py-3 border-b border-surface-container
-                    last:border-0">
+                    last:border-0"
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg
+                    <div
+                      className="w-8 h-8 rounded-lg
                       bg-surface-container flex items-center
-                      justify-center flex-shrink-0">
-                      <span className="text-xs font-black
-                        text-on-surface-variant">
+                      justify-center shrink-0"
+                    >
+                      <span
+                        className="text-xs font-black
+                        text-on-surface-variant"
+                      >
                         {item.quantity}×
                       </span>
                     </div>
-                    <span className="text-sm font-medium
-                      text-on-surface">
+                    <span
+                      className="text-sm font-medium
+                      text-on-surface"
+                    >
                       {item.name || `Product ${i + 1}`}
                     </span>
                   </div>
@@ -331,9 +324,12 @@ const CheckoutPage = () => {
                 <span className="text-sm text-on-surface-variant">
                   Subtotal
                 </span>
-                <span className="text-sm font-semibold
-                  text-on-surface">
-                  ₹{parseFloat(totalAmount).toLocaleString("en-IN", {
+                <span
+                  className="text-sm font-semibold
+                  text-on-surface"
+                >
+                  ₹
+                  {parseFloat(totalAmount).toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
                   })}
                 </span>
@@ -342,54 +338,61 @@ const CheckoutPage = () => {
                 <span className="text-sm text-on-surface-variant">
                   Delivery
                 </span>
-                <span className="text-sm font-bold text-green-600">
-                  Free
-                </span>
+                <span className="text-sm font-bold text-green-600">Free</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-on-surface-variant">
-                  Taxes
-                </span>
+                <span className="text-sm text-on-surface-variant">Taxes</span>
                 <span className="text-sm text-on-surface-variant">
                   Included
                 </span>
               </div>
             </div>
 
-            <div className="border-t border-surface-container
-              my-6" />
+            <div
+              className="border-t border-surface-container
+              my-6"
+            />
 
             {/* Total */}
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold uppercase
-                tracking-widest text-on-surface-variant">
+              <span
+                className="text-xs font-bold uppercase
+                tracking-widest text-on-surface-variant"
+              >
                 Total
               </span>
-              <span className="text-2xl font-black text-primary
-                tracking-tight">
-                ₹{parseFloat(totalAmount).toLocaleString("en-IN", {
+              <span
+                className="text-2xl font-black text-primary
+                tracking-tight"
+              >
+                ₹
+                {parseFloat(totalAmount).toLocaleString("en-IN", {
                   minimumFractionDigits: 2,
                 })}
               </span>
             </div>
 
             {/* Payment badges */}
-            <div className="mt-6 pt-6 border-t
+            <div
+              className="mt-6 pt-6 border-t
               border-surface-container flex items-center
-              justify-center gap-4">
-              <span className="text-xs text-on-surface-variant
-                font-medium">
+              justify-center gap-4"
+            >
+              <span
+                className="text-xs text-on-surface-variant
+                font-medium"
+              >
                 Secured by
               </span>
-              <span className="text-xs font-black text-primary
-                tracking-tight">
+              <span
+                className="text-xs font-black text-primary
+                tracking-tight"
+              >
                 STRIPE
               </span>
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
   );

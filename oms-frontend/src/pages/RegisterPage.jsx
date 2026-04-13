@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +15,7 @@ const registerSchema = z.object({
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { mutate: registerUser, isPending } = useRegister();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -45,17 +47,28 @@ const RegisterPage = () => {
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white shadow-lg shadow-primary/20">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dataset</span>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                dataset
+              </span>
             </div>
-            <span className="text-2xl font-extrabold tracking-tighter text-white">OMS Admin</span>
+            <span className="text-2xl font-extrabold tracking-tighter text-white">
+              OMS Admin
+            </span>
           </div>
         </div>
         <div className="relative z-10 max-w-lg">
           <h1 className="font-inter text-5xl font-semibold leading-tight tracking-tight text-white lg:text-6xl">
-            The Global <span className="text-primary-fixed-dim">Controller</span> for Enterprise.
+            The Global{" "}
+            <span className="text-primary-fixed-dim">Controller</span> for
+            Enterprise.
           </h1>
           <p className="mt-8 text-lg text-slate-300 leading-relaxed opacity-80">
-            Architecting the future of order management. Our curated interface provides surgical precision for global operations and customer fulfillment.
+            Architecting the future of order management. Our curated interface
+            provides surgical precision for global operations and customer
+            fulfillment.
           </p>
         </div>
         <div className="relative z-10">
@@ -72,20 +85,33 @@ const RegisterPage = () => {
           {/* Header */}
           <header className="mb-12">
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container-high lg:hidden">
-              <span className="material-symbols-outlined text-primary">dataset</span>
+              <span className="material-symbols-outlined text-primary">
+                dataset
+              </span>
             </div>
-            <h2 className="font-inter text-4xl font-medium tracking-tight text-on-surface">Create your account</h2>
-            <p className="mt-3 text-on-surface-variant opacity-80">Join the OMS network to manage your global operations.</p>
+            <h2 className="font-inter text-4xl font-medium tracking-tight text-on-surface">
+              Create your account
+            </h2>
+            <p className="mt-3 text-on-surface-variant opacity-80">
+              Join the OMS network to manage your global operations.
+            </p>
           </header>
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Full Name */}
             <div className="group">
-              <label className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70" htmlFor="full_name">Full Name</label>
+              <label
+                className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70"
+                htmlFor="full_name"
+              >
+                Full Name
+              </label>
               <div className="relative mt-2">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[20px]">person</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    person
+                  </span>
                 </div>
                 <input
                   {...register("name")}
@@ -99,7 +125,9 @@ const RegisterPage = () => {
               </div>
               {errors.name && (
                 <p className="text-error text-[11px] font-medium ml-1 mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">error</span>
+                  <span className="material-symbols-outlined text-[14px]">
+                    error
+                  </span>
                   {errors.name.message}
                 </p>
               )}
@@ -107,10 +135,17 @@ const RegisterPage = () => {
 
             {/* Email */}
             <div className="group">
-              <label className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70" htmlFor="email">Email Address</label>
+              <label
+                className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70"
+                htmlFor="email"
+              >
+                Email Address
+              </label>
               <div className="relative mt-2">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[20px]">mail</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    mail
+                  </span>
                 </div>
                 <input
                   {...register("email")}
@@ -124,7 +159,9 @@ const RegisterPage = () => {
               </div>
               {errors.email && (
                 <p className="text-error text-[11px] font-medium ml-1 mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">error</span>
+                  <span className="material-symbols-outlined text-[14px]">
+                    error
+                  </span>
                   {errors.email.message}
                 </p>
               )}
@@ -132,24 +169,44 @@ const RegisterPage = () => {
 
             {/* Password */}
             <div className="group">
-              <label className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70" htmlFor="password">Password</label>
+              <label
+                className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70"
+                htmlFor="password"
+              >
+                Password
+              </label>
               <div className="relative mt-2">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[20px]">lock</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    lock
+                  </span>
                 </div>
                 <input
                   {...register("password")}
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className={`block w-full rounded-xl border-0 bg-surface-container-low py-4 pl-12 pr-4 text-on-surface ring-1 ring-inset placeholder:text-outline focus:bg-surface-container-highest focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200 ${
-                    errors.password ? "ring-error/40" : "ring-outline-variant/15"
+                  className={`block w-full rounded-xl border-0 bg-surface-container-low py-4 pl-12 pr-12 text-on-surface ring-1 ring-inset placeholder:text-outline focus:bg-surface-container-highest focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200 ${
+                    errors.password
+                      ? "ring-error/40"
+                      : "ring-outline-variant/15"
                   }`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors focus:outline-none flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
+                </button>
               </div>
               {errors.password && (
                 <p className="text-error text-[11px] font-medium ml-1 mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">error</span>
+                  <span className="material-symbols-outlined text-[14px]">
+                    error
+                  </span>
                   {errors.password.message}
                 </p>
               )}
@@ -167,15 +224,24 @@ const RegisterPage = () => {
             </div>
 
             <div className="flex items-center justify-center gap-2 pt-4 text-sm">
-              <span className="text-on-surface-variant">Already have an account?</span>
-              <Link to="/login" className="font-semibold text-primary transition-colors hover:text-primary-dim">Sign In</Link>
+              <span className="text-on-surface-variant">
+                Already have an account?
+              </span>
+              <Link
+                to="/login"
+                className="font-semibold text-primary transition-colors hover:text-primary-dim"
+              >
+                Sign In
+              </Link>
             </div>
           </form>
 
           {/* Footer */}
           <footer className="mt-16 flex flex-col items-center gap-4 lg:hidden">
             <div className="h-px w-12 bg-outline-variant/20" />
-            <span className="font-inter text-[10px] uppercase tracking-[0.2em] text-on-surface-variant opacity-50">© 2026 OMS Global</span>
+            <span className="font-inter text-[10px] uppercase tracking-[0.2em] text-on-surface-variant opacity-50">
+              © 2026 OMS Global
+            </span>
           </footer>
         </div>
       </section>

@@ -498,7 +498,7 @@ const DashboardPage = () => {
                 <ProductImg
                   image={prod?.image}
                   name={prod?.name}
-                  className="object-contain w-full h-full transform transition-transform duration-700 group-hover:scale-105"
+                  className="object-contain w-full h-full transform transition-transform duration-700 group-hover:scale-110"
                 />
               </div>
               <div className="w-full text-left mt-auto">

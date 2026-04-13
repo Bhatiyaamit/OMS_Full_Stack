@@ -837,11 +837,11 @@ const ProductsPage = () => {
                         }}
                       >
                         {/* Image Container */}
-                        <div className="relative mb-5 aspect-4/5 overflow-hidden rounded-2xl bg-slate-50">
+                        <div className="relative mb-5 aspect-4/5 overflow-hidden rounded-2xl">
                           {getImageUrl(product.image) ? (
                             <img
                               alt={product.name}
-                              className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${
+                              className={`w-full h-full object-contain scale-110 transition-transform duration-700 group-hover:scale-120 ${
                                 isOutOfStock ? "grayscale opacity-80" : ""
                               }`}
                               src={getImageUrl(product.image)}

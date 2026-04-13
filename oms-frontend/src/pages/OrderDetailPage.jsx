@@ -50,8 +50,12 @@ const OrderDetailPage = () => {
         <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
           <span className="material-symbols-outlined text-3xl">error</span>
         </div>
-        <h2 className="text-2xl font-bold text-on-surface mb-2">Order not found</h2>
-        <p className="text-on-surface-variant mb-6">We couldn't find the order you're looking for.</p>
+        <h2 className="text-2xl font-bold text-on-surface mb-2">
+          Order not found
+        </h2>
+        <p className="text-on-surface-variant mb-6">
+          We couldn't find the order you're looking for.
+        </p>
         <button
           onClick={() => navigate("/orders")}
           className="bg-primary text-on-primary px-8 py-3 rounded-full font-bold hover:bg-primary-dim transition-all"
@@ -65,38 +69,86 @@ const OrderDetailPage = () => {
   // Stepper logic
   const steps = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED"];
   const currentIndex = steps.indexOf(order.status);
-  
+
   const getStepData = (stepStr) => {
-      switch(stepStr) {
-          case "PENDING": return { icon: "hourglass_empty", label: "Order Placed", desc: "Your order has been received" };
-          case "CONFIRMED": return { icon: "verified", label: "Payment Confirmed", desc: "Payment verified, being processed" };
-          case "SHIPPED": return { icon: "local_shipping", label: "Order Shipped", desc: "Package is on its way to you" };
-          case "DELIVERED": return { icon: "inventory", label: "Delivered", desc: "Order delivered successfully" };
-          default: return { icon: "info", label: stepStr, desc: "" };
-      }
+    switch (stepStr) {
+      case "PENDING":
+        return {
+          icon: "hourglass_empty",
+          label: "Order Placed",
+          desc: "Your order has been received",
+        };
+      case "CONFIRMED":
+        return {
+          icon: "verified",
+          label: "Payment Confirmed",
+          desc: "Payment verified, being processed",
+        };
+      case "SHIPPED":
+        return {
+          icon: "local_shipping",
+          label: "Order Shipped",
+          desc: "Package is on its way to you",
+        };
+      case "DELIVERED":
+        return {
+          icon: "inventory",
+          label: "Delivered",
+          desc: "Order delivered successfully",
+        };
+      default:
+        return { icon: "info", label: stepStr, desc: "" };
+    }
   };
 
   const handleCancelOrder = () => {
     Modal.confirm({
-      title: "Cancel this order?",
-      content: "Stock will be restored. This cannot be undone.",
+      title: (
+        <div className="text-xl font-bold tracking-tight text-slate-900 mt-1">
+          Cancel this order?
+        </div>
+      ),
+      content: (
+        <div className="text-sm font-medium text-slate-500 mt-2">
+          Stock will be restored. This action cannot be undone.
+        </div>
+      ),
+      icon: (
+        <span className="material-symbols-outlined text-red-500 text-4xl mr-3 mt-1.5">
+          error
+        </span>
+      ),
       okText: "Yes, Cancel",
-      okType: "danger",
+      okButtonProps: {
+        className:
+          "bg-red-500 hover:bg-red-600 text-white border-none shadow-sm font-semibold rounded-full px-6 h-10",
+      },
       cancelText: "Keep Order",
+      cancelButtonProps: {
+        className:
+          "border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold rounded-full px-6 h-10",
+      },
+      className:
+        "rounded-3xl overflow-hidden [&_.ant-modal-content]:rounded-[1.5rem] [&_.ant-modal-content]:p-8 shadow-2xl",
+      maskStyle: { backdropFilter: "blur(4px)" },
       onOk: () => {
-        api.delete(`/orders/${id}`)
+        api
+          .delete(`/orders/${id}`)
           .then(() => {
             toast.success("Order successfully cancelled");
             navigate("/orders");
           })
           .catch((err) => {
-            toast.error(err.response?.data?.message || "Failed to cancel order");
+            toast.error(
+              err.response?.data?.message || "Failed to cancel order",
+            );
           });
       },
     });
   };
 
-  const addressComplete = profile?.address && profile?.city && profile?.state && profile?.pincode;
+  const addressComplete =
+    profile?.address && profile?.city && profile?.state && profile?.pincode;
 
   return (
     <div className="max-w-5xl mx-auto py-2 px-4 pb-24">
@@ -127,9 +179,11 @@ const OrderDetailPage = () => {
           {(order.status === "PENDING" || order.status === "CONFIRMED") && (
             <button
               onClick={handleCancelOrder}
-              className="hidden lg:flex text-sm bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-200 px-4 py-2 rounded-full font-semibold items-center gap-1.5 shadow-sm"
+              className="hidden lg:flex text-sm bg-red-50 text-red-600 hover:bg-red-800 hover:text-white transition-colors border border-red-200 px-4 py-2 rounded-full font-semibold items-center gap-1.5 shadow-sm"
             >
-              <span className="material-symbols-outlined text-base">delete</span>
+              <span className="material-symbols-outlined text-base">
+                delete
+              </span>
               <span className="hidden sm:inline">Cancel Order</span>
             </button>
           )}
@@ -140,7 +194,9 @@ const OrderDetailPage = () => {
             <span className="material-symbols-outlined text-base">
               arrow_back
             </span>
-            <span className="font-semibold hidden sm:inline">Back to Orders</span>
+            <span className="font-semibold hidden sm:inline">
+              Back to Orders
+            </span>
             <span className="font-semibold sm:hidden">Back</span>
           </button>
         </div>
@@ -347,7 +403,9 @@ const OrderDetailPage = () => {
                 >
                   {({ loading }) => (
                     <React.Fragment>
-                      <span className={`material-symbols-outlined text-lg ${loading ? 'animate-spin' : 'group-hover:-translate-y-0.5 transition-transform'}`}>
+                      <span
+                        className={`material-symbols-outlined text-lg ${loading ? "animate-spin" : "group-hover:-translate-y-0.5 transition-transform"}`}
+                      >
                         {loading ? "sync" : "receipt_long"}
                       </span>
                       {loading ? "Generating PDF..." : "Download Invoice"}
@@ -477,12 +535,13 @@ const OrderDetailPage = () => {
             onClick={handleCancelOrder}
             className="w-full rounded-full border border-red-400 bg-transparent py-3 text-red-500 hover:bg-red-50 transition-colors font-semibold flex items-center justify-center gap-2"
           >
-            <span className="material-symbols-outlined text-[16px]">delete</span>
+            <span className="material-symbols-outlined text-[16px]">
+              delete
+            </span>
             Cancel Order
           </button>
         </div>
       )}
-
     </div>
   );
 };
