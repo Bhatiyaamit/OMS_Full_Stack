@@ -830,14 +830,14 @@ const ProductsPage = () => {
                     return (
                       <div
                         key={product.id}
-                        className="group relative bg-white rounded-[2.5rem] border border-slate-100 p-3 shadow-xs hover:shadow-xl transition-all duration-500 hover:-translate-y-2 flex flex-col cursor-pointer"
+                        className="group relative bg-white rounded-[1.5rem] border border-slate-100 p-3 shadow-xs hover:shadow-xl transition-all duration-500 hover:-translate-y-2 flex flex-col cursor-pointer"
                         onClick={() => {
                           setSelectedProduct(product);
                           setDetailModalOpen(true);
                         }}
                       >
                         {/* Image Container */}
-                        <div className="relative mb-5 aspect-4/5 overflow-hidden rounded-4xl bg-slate-50">
+                        <div className="relative mb-5 aspect-4/5 overflow-hidden rounded-2xl bg-slate-50">
                           {getImageUrl(product.image) ? (
                             <img
                               alt={product.name}
