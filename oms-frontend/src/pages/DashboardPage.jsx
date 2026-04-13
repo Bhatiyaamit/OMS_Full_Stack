@@ -53,7 +53,7 @@ const ProductImg = ({ image, name, className = "" }) =>
     <img
       src={getImageUrl(image)}
       alt={name}
-      className={`w-full h-full object-cover ${className}`}
+      className={`w-full h-full ${className.includes("object-contain") ? "" : "object-cover"} ${className}`}
     />
   ) : (
     <div
@@ -94,7 +94,6 @@ const DashboardPage = () => {
   const trending = products[6] || products[0];
   const limitedDeal = products[7] || products[1];
   const spotlight = products[8] || products[2];
-  const moreCards = products.slice(0, 4);
 
   return (
     <div className="w-full max-w-[1800px] mx-auto bg-[#F0EEE6] rounded-[2.5rem] p-4 sm:p-8 xl:p-8 shadow-2xl mt-4 border border-white/60 font-sans">
@@ -232,7 +231,10 @@ const DashboardPage = () => {
             </div>
             <div className="flex-1 min-w-0">
               <StockLabel stock={card2?.stock ?? 99} />
-              <h4 title={card2?.name} className="text-sm sm:text-base font-bold text-slate-900 mt-2 leading-tight line-clamp-1">
+              <h4
+                title={card2?.name}
+                className="text-sm sm:text-base font-bold text-slate-900 mt-2 leading-tight line-clamp-1"
+              >
                 {card2?.name || "Premium Pick"}
               </h4>
               <p className="text-slate-500 font-bold text-sm mt-1">
@@ -266,7 +268,10 @@ const DashboardPage = () => {
             </div>
             <div className="absolute bottom-5 left-5 right-5 z-10">
               <StockLabel stock={card3?.stock ?? 99} />
-              <h4 title={card3?.name} className="text-white text-sm sm:text-base font-bold mt-1.5 leading-tight line-clamp-1">
+              <h4
+                title={card3?.name}
+                className="text-white text-sm sm:text-base font-bold mt-1.5 leading-tight line-clamp-1"
+              >
                 {card3?.name || "Top Seller"}
               </h4>
               <p className="text-white/70 font-bold text-sm">
@@ -277,60 +282,79 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* ══ STATS STRIP ══ */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        {[
-          {
-            icon: "local_shipping",
-            label: "Free Delivery",
-            sub: "On orders over ₹999",
-            color: "text-blue-600",
-            bg: "bg-blue-50",
-          },
-          {
-            icon: "workspace_premium",
-            label: "Premium Quality",
-            sub: "Curated collections",
-            color: "text-purple-600",
-            bg: "bg-purple-50",
-          },
-          {
-            icon: "autorenew",
-            label: "Easy Returns",
-            sub: "30-day return policy",
-            color: "text-green-600",
-            bg: "bg-green-50",
-          },
-          {
-            icon: "verified_user",
-            label: "Secure Payment",
-            sub: "100% safe checkout",
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-          },
-        ].map(({ icon, label, sub, color, bg }) => (
-          <div
-            key={label}
-            className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-slate-100"
-          >
+      {/* ══ THE SHOPNEST DIFFERENCE (Scrollable Carousel) ══ */}
+      <div className="mb-8 mt-4">
+        <div className="mb-6 px-2">
+          <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
+            The ShopNest difference.{" "}
+            <span className="text-slate-500 font-medium">
+              Even more reasons to shop with us.
+            </span>
+          </h3>
+        </div>
+
+        {/* Horizontal Scroll Container */}
+        <div
+          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 snap-x hide-scrollbar px-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          <style>{`
+            .hide-scrollbar::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+
+          {[
+            {
+              icon: "sentiment_satisfied",
+              iconColor: "text-purple-500",
+              title: "Make them yours.",
+              desc: "Engrave a mix of emoji, names and numbers for free.",
+              descColor: "text-purple-500",
+            },
+            {
+              icon: "local_shipping",
+              iconColor: "text-green-600",
+              title: "Enjoy free delivery.",
+              desc: "Or easy pickup from a ShopNest store.",
+              descColor: "text-green-600",
+            },
+            {
+              icon: "autorenew",
+              iconColor: "text-blue-500",
+              title: "Trade in your eligible device.",
+              desc: "For instant credit toward your next purchase.",
+              descColor: "text-blue-500",
+            },
+            {
+              icon: "credit_card",
+              iconColor: "text-amber-500",
+              title: "Pay in full or in installments.",
+              desc: "Choose the payment option that works for you.",
+              descColor: "text-amber-500",
+            },
+          ].map((item, idx) => (
             <div
-              className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}
+              key={idx}
+              className="bg-white rounded-3xl p-8 min-w-[280px] sm:min-w-[320px] max-w-[320px] flex-shrink-0 snap-center shadow-sm hover:shadow-md transition-shadow cursor-default border border-slate-100 flex flex-col justify-start"
             >
               <span
-                className={`material-symbols-outlined ${color} text-xl`}
-                style={{ fontVariationSettings: "'FILL' 1" }}
+                className={`material-symbols-outlined text-4xl mb-4 ${item.iconColor}`}
+                style={{ fontVariationSettings: "'wght' 300" }}
               >
-                {icon}
+                {item.icon}
               </span>
-            </div>
-            <div>
-              <p className="font-bold text-slate-900 text-xs sm:text-sm leading-tight">
-                {label}
+              <h4 className="text-xl font-semibold text-slate-900 leading-tight mb-2">
+                {item.title}
+              </h4>
+              <p
+                className={`text-lg font-medium leading-tight ${item.descColor}`}
+              >
+                {item.desc}
               </p>
-              <p className="hidden sm:block text-slate-500 text-sm font-medium">{sub}</p>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* ══ TRENDING + CATEGORIES ROW ══ */}
@@ -428,62 +452,52 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* ══ PRODUCT GRID ROW ══ */}
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-5 px-1">
-          <h3 className="text-xl font-black text-slate-900 tracking-tight">
-            All Products
-          </h3>
-          <button
-            onClick={() => navigate("/products")}
-            className="text-xs font-black text-slate-500 uppercase tracking-widest hover:text-slate-900 transition-colors flex items-center gap-1"
-          >
-            View All{" "}
-            <span className="material-symbols-outlined text-sm">
-              arrow_forward
+      {/* ══ PREMIUM CAROUSEL ROW ══ */}
+      <div className="mb-8 mt-6">
+        <div className="mb-6 px-2">
+          <h3 className="text-2xl font-semibold text-slate-900 tracking-tight">
+            <span className="font-semibold text-slate-900">All Products.</span>
+            <span className="text-slate-500 font-medium ml-2">
+              Explore our complete collection.
             </span>
-          </button>
+          </h3>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {moreCards.map((prod, i) => (
+
+        {/* Horizontal Scroll Container */}
+        <div
+          className="flex gap-4 sm:gap-6 overflow-x-auto pb-8 snap-x hide-scrollbar px-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {products.slice(0, 10).map((prod, i) => (
             <div
               key={prod?.id || i}
-              className="bg-white rounded-[1.75rem] overflow-hidden shadow-sm border border-slate-100 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all group"
+              className="bg-white rounded-[2rem] p-6 pb-8 min-w-[280px] sm:min-w-[340px] max-w-[340px] flex-shrink-0 snap-center cursor-default border border-slate-100 flex flex-col items-center group relative overflow-hidden"
               onClick={() => navigate("/products")}
             >
-              <div className="h-44 bg-slate-50 overflow-hidden relative">
+              {/* Product Image Area */}
+              <div className="w-full h-42 sm:h-40 mt-1 mb-3 flex items-center justify-center relative">
                 <ProductImg
                   image={prod?.image}
                   name={prod?.name}
-                  className="group-hover:scale-110 transition-transform duration-500"
+                  className="object-contain w-full h-full transform transition-transform duration-700 group-hover:scale-105"
                 />
-                {prod?.stock < 10 && prod?.stock > 0 && (
-                  <div className="absolute top-3 left-3 bg-amber-400 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider">
-                    Low Stock
-                  </div>
-                )}
-                {prod?.stock === 0 && (
-                  <div className="absolute top-3 left-3 bg-slate-700 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider">
-                    Sold Out
-                  </div>
-                )}
               </div>
-              <div className="p-5">
-                <h4 title={prod?.name} className="text-sm sm:text-base font-bold text-slate-900 leading-tight mb-1 line-clamp-1">
+
+              {/* Content Info */}
+              <div className="w-full text-left mt-auto">
+                <h4
+                  title={prod?.name}
+                  className="text-base sm:text-lg font-semibold text-slate-900 leading-tight mb-3"
+                >
                   {prod?.name}
                 </h4>
-                <p className="text-slate-500 font-bold text-xs mb-3">
-                  {prod?.stock > 0 ? `${prod.stock} available` : "Out of stock"}
-                </p>
                 <div className="flex items-center justify-between">
-                  <span className="font-black text-slate-900 text-base">
+                  <p className="text-lg font-bold text-slate-900">
                     ₹{prod ? parseFloat(prod.price).toLocaleString() : "—"}
-                  </span>
-                  <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center group-hover:bg-[#C8F04A] transition-colors">
-                    <span className="material-symbols-outlined text-white group-hover:text-slate-900 text-xs">
-                      add
-                    </span>
-                  </div>
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-slate-500 font-bold bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                    {prod?.stock > 0 ? `${prod.stock} left` : "Out of Stock"}
+                  </p>
                 </div>
               </div>
             </div>
