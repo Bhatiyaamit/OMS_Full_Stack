@@ -269,6 +269,24 @@ const CheckoutPage = () => {
               <CheckoutForm items={items} totalAmount={totalAmount} />
             </Elements>
           </div>
+
+          {/* Test card hint — remove in production */}
+          <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+            <span className="material-symbols-outlined text-blue-500 text-lg mt-0.5">
+              info
+            </span>
+            <div>
+              <p className="text-xs font-bold text-blue-700 mb-1">
+                Test Mode — Use these card details
+              </p>
+              <p className="text-xs text-blue-600 font-mono">
+                Card: 4000 0035 6000 0008
+              </p>
+              <p className="text-xs text-blue-600 font-mono">
+                Expiry: 12/26 · CVV: 123 · Name: Any
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* ── Right — Order Summary ── */}

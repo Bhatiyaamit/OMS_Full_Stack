@@ -3,14 +3,14 @@
 @theme {
   /* ── Fonts ────────────────────────────────────────────── */
   --font-plus-jakarta: "Plus Jakarta Sans", sans-serif;
-  
+
   /* Set base font */
   --font-sans: "Plus Jakarta Sans", sans-serif;
 
   /* ── Stitch "Order Success" Palette ─────────────── */
   --color-primary: #063ebb;
   --color-primary-dim: #052f8c;
-  --color-primary-container: #  ;
+  --color-primary-container: #;
   --color-primary-fixed: #dce1ff;
   --color-primary-fixed-dim: #b6c4ff;
   --color-on-primary: #ffffff;
@@ -47,19 +47,19 @@
 
   --color-background: #f8faf9;
   --color-on-background: #191c1c;
-  
+
   --color-surface: #f8faf9;
   --color-surface-bright: #f8faf9;
   --color-surface-dim: #d8dad9;
   --color-surface-tint: #2a54cf;
   --color-surface-variant: #e1e3e2;
-  
+
   --color-surface-container: #eceeed;
   --color-surface-container-low: #f2f4f3;
   --color-surface-container-high: #e6e9e8;
   --color-surface-container-highest: #e1e3e2;
   --color-surface-container-lowest: #ffffff;
-  
+
   --color-on-surface: #191c1c;
   --color-on-surface-variant: #434654;
 
@@ -103,7 +103,11 @@
 
 @layer utilities {
   .hero-gradient {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--color-primary) 0%,
+      var(--color-primary-container) 100%
+    );
   }
   .glass-panel {
     background: rgba(255, 255, 255, 0.6);
