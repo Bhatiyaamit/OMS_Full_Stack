@@ -7,6 +7,7 @@ import { Spin } from "antd";
 import { toast } from "sonner";
 import useAuthStore from "../store/authStore";
 import api from "../api/axiosInstance";
+import GooglePlacesAutocomplete from "../components/common/GooglePlacesAutocomplete";
 
 // ── Validation Schema ─────────────────────────────────────
 const profileSchema = z.object({
@@ -66,6 +67,7 @@ const ProfilePage = () => {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(profileSchema),
@@ -436,24 +438,22 @@ const ProfilePage = () => {
                   This address will be used for all your orders.
                 </p>
 
-                {/* Street Address */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                    Street Address
-                  </label>
-                  <textarea
-                    {...register("address")}
-                    rows={3}
-                    placeholder="Flat/House No., Building, Street, Area"
-                    className={`w-full rounded-lg bg-surface-container-low border-none py-3.5 px-4 text-sm text-on-surface focus:ring-1 focus:ring-primary transition-all resize-none
-                      ${errors.address ? "ring-1 ring-error" : ""}`}
-                  />
-                  {errors.address && (
-                    <p className="text-error text-xs mt-1.5 font-medium">
-                      {errors.address.message}
-                    </p>
-                  )}
-                </div>
+                <GooglePlacesAutocomplete
+                  register={register}
+                  setValue={setValue}
+                  addressFieldName="address"
+                  cityFieldName="city"
+                  stateFieldName="state"
+                  pincodeFieldName="pincode"
+                  label="Street Address"
+                  placeholder="Flat/House No., Building, Street, Area"
+                  helperText="Pick an address suggestion to auto-fill city, state, and pincode."
+                />
+                {errors.address && (
+                  <p className="text-error text-xs mt-1.5 font-medium">
+                    {errors.address.message}
+                  </p>
+                )}
 
                 {/* City + State */}
                 <div className="grid grid-cols-2 gap-4">
