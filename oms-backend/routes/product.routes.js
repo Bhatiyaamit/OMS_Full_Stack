@@ -7,10 +7,12 @@ const {
   updateProduct,
   deleteProduct,
 } = require("../controllers/productController");
+const { bulkImportProducts } = require("../controllers/bulkImportController");
 const { protect } = require("../middleware/authMiddleware");
 const { optionalProtect } = require("../middleware/optionalAuthMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
 const { upload } = require("../services/uploadService");
+const { uploadZip } = require("../middleware/uploadZipMiddleware");
 
 /**
  * @swagger
@@ -162,6 +164,15 @@ router.get("/:id", optionalProtect, getProductById);
  *       422:
  *         description: Validation error
  */
+// POST /api/products/bulk-import — ADMIN only, ZIP upload
+router.post(
+  "/bulk-import",
+  protect,
+  authorize("ADMIN", "MANAGER"),
+  uploadZip.single("zipFile"),
+  bulkImportProducts,
+);
+
 router.post(
   "/",
   protect,

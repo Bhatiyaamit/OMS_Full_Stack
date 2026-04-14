@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import api from "../api/axiosInstance";
 import {
   useProducts,
   useDeleteProduct,
@@ -15,6 +16,7 @@ import { z } from "zod";
 
 const productSchema = z.object({
   name: z.string().min(2, "Name is required"),
+  description: z.string().min(2, "Description is required"),
   price: z.coerce.number().positive("Price must be positive"),
   stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
 });
@@ -63,6 +65,13 @@ const ProductsPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const hasMountedRef = useRef(false);
+
+  // ── Bulk Import state ──
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
+  const bulkFileInputRef = useRef(null);
 
   const { data: productsData, isLoading } = useProducts({
     search: debouncedSearchTerm,
@@ -361,6 +370,28 @@ const ProductsPage = () => {
           {errors.name && (
             <p className="text-error text-[11px] font-medium ml-1 mt-1">
               {errors.name.message}
+            </p>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="group">
+          <label className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70">
+            Description
+          </label>
+          <div className="relative mt-2">
+            <textarea
+              {...register("description")}
+              placeholder="e.g. A premium high-performance product..."
+              rows={3}
+              className={`block w-full rounded-xl border-0 bg-surface-container-low py-4 px-4 text-on-surface ring-1 ring-inset placeholder:text-outline focus:bg-surface-container-highest focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200 resize-none ${
+                errors.description ? "ring-error/40" : "ring-outline-variant/15"
+              }`}
+            />
+          </div>
+          {errors.description && (
+            <p className="text-error text-[11px] font-medium ml-1 mt-1">
+              {errors.description.message}
             </p>
           )}
         </div>
@@ -1187,12 +1218,27 @@ const ProductsPage = () => {
             />
           </div>
           {isAdmin && (
-            <button
-              onClick={() => openDrawer()}
-              className="hidden md:block bg-primary text-on-primary px-6 py-2.5 rounded-full text-sm font-semibold tracking-tight hover:bg-primary-dim transition-all shadow-sm active:scale-95 shrink-0"
-            >
-              + New Product
-            </button>
+            <>
+              <button
+                onClick={() => openDrawer()}
+                className="hidden md:block bg-primary text-on-primary px-6 py-2.5 rounded-full text-sm font-semibold tracking-tight hover:bg-primary-dim transition-all shadow-sm active:scale-95 shrink-0"
+              >
+                + New Product
+              </button>
+              <button
+                onClick={() => {
+                  setBulkResult(null);
+                  setBulkFile(null);
+                  setBulkModalOpen(true);
+                }}
+                className="hidden md:flex items-center gap-1.5 border border-primary text-primary px-5 py-2.5 rounded-full text-sm font-semibold tracking-tight hover:bg-primary/5 transition-all active:scale-95 shrink-0"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  upload_file
+                </span>
+                Bulk Import
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -1457,6 +1503,327 @@ const ProductsPage = () => {
       </div>
 
       {ProductDrawer}
+
+      {/* ══ Bulk Import Modal ══════════════════════════════ */}
+      <Modal
+        open={bulkModalOpen}
+        onCancel={() => {
+          if (!bulkUploading) {
+            setBulkModalOpen(false);
+            setBulkFile(null);
+            setBulkResult(null);
+          }
+        }}
+        footer={null}
+        title={null}
+        centered
+        width={480}
+        closeIcon={null}
+        styles={{
+          content: {
+            borderRadius: "20px",
+            padding: "2rem 2rem 1.75rem",
+            backgroundColor: "var(--surface)",
+            border: "1px solid var(--outline-variant)",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+          },
+          body: { padding: 0 },
+        }}
+        maskClosable={!bulkUploading}
+        closable={!bulkUploading}
+        className="app-theme-modal"
+      >
+        <div className="bg-surface text-on-surface">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-7">
+            <div className="flex items-center gap-[14px]">
+              <div className="w-[42px] h-[42px] rounded-[10px] bg-surface-container-low border border-outline-variant/30 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-on-surface-variant text-[20px]">
+                  upload_file
+                </span>
+              </div>
+              <div>
+                <p className="text-[16px] font-semibold text-on-surface leading-tight">
+                  Bulk import products
+                </p>
+                <p className="text-[13px] text-on-surface-variant mt-[3px]">
+                  Upload a ZIP with your spreadsheet & images
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (!bulkUploading) {
+                  setBulkModalOpen(false);
+                  setBulkFile(null);
+                  setBulkResult(null);
+                }
+              }}
+              className="bg-transparent border-none cursor-pointer text-on-surface-variant p-1 rounded-[6px] flex items-center transition-colors hover:bg-surface-container"
+            ></button>
+          </div>
+
+          {/* Result View or Upload View */}
+          {bulkResult ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-[10px]">
+                <div className="bg-primary/10 border border-primary/20 rounded-[10px] p-4 text-center">
+                  <p className="text-2xl font-black text-primary">
+                    {bulkResult.imported}
+                  </p>
+                  <p className="text-[12px] font-semibold text-primary mt-1">
+                    Products Imported
+                  </p>
+                </div>
+                <div className="bg-transparent border border-outline-variant/40 rounded-[10px] p-4 text-center">
+                  <p className="text-2xl font-black text-on-surface-variant">
+                    {bulkResult.skipped}
+                  </p>
+                  <p className="text-[12px] font-semibold text-on-surface-variant mt-1">
+                    Skipped / Errors
+                  </p>
+                </div>
+              </div>
+              {bulkResult.errors?.length > 0 && (
+                <div className="bg-error/10 border border-error/20 rounded-[10px] p-4 max-h-40 overflow-y-auto">
+                  <p className="text-[12px] font-bold text-error mb-2">
+                    Row Errors
+                  </p>
+                  {bulkResult.errors.map((e, i) => (
+                    <p
+                      key={i}
+                      className="text-[12px] text-error font-mono tracking-tight leading-tight mb-1"
+                    >
+                      Row {e.row}: {e.reason}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    setBulkModalOpen(false);
+                    setBulkFile(null);
+                    setBulkResult(null);
+                  }}
+                  className="w-full p-[11px] rounded-[10px] border-none bg-primary text-[14px] font-medium text-on-primary hover:bg-primary-dim transition-colors cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Section Card */}
+              <div className="bg-surface-container-low/50 rounded-[14px] p-5 mb-5 border border-outline-variant/30">
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-[11px] font-semibold tracking-[0.07em] text-on-surface-variant uppercase m-0 leading-none">
+                    ZIP structure
+                  </p>
+                  <a
+                    href="/sample_products.zip"
+                    download="sample_products.zip"
+                    className="text-[12px] text-primary bg-transparent border-none cursor-pointer font-medium flex items-center gap-[4px] p-0 hover:underline"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      download
+                    </span>
+                    Sample ZIP
+                  </a>
+                </div>
+
+                <div className="bg-surface rounded-[10px] py-[14px] px-4 border border-outline-variant/20">
+                  {/* XLSX Row */}
+                  <div className="flex items-center gap-2.5 py-1">
+                    <div className="w-[28px] h-[32px] shrink-0 bg-primary/20 border border-primary/40 rounded flex flex-col pt-[3px] items-center relative">
+                      <div className="w-full h-[6px] bg-primary/60 border-b border-primary/20 absolute top-0 rounded-t left-0"></div>
+                      <span className="text-[7px] font-extrabold text-primary mt-[10px]">
+                        XLSX
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-medium text-on-surface leading-tight">
+                        products.xlsx
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant mt-[2px] leading-tight">
+                        Spreadsheet with product data
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ZIP Row */}
+                  <div className="flex items-center gap-2.5 py-1 mt-2 pt-2 border-t border-outline-variant/10">
+                    <div className="w-[28px] h-[32px] shrink-0 bg-surface-container border border-outline-variant/40 rounded flex flex-col justify-center items-center">
+                      <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
+                        folder_zip
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-medium text-on-surface leading-tight">
+                        images/
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant mt-[2px] leading-tight">
+                        laptop.jpg · phone.png · …
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <p className="text-[11px] font-semibold tracking-[0.07em] text-on-surface-variant uppercase m-0 mb-3 leading-none">
+                    Required columns
+                  </p>
+                  <div className="flex gap-[6px] flex-wrap">
+                    <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-primary/10 text-primary border border-primary/20">
+                      name
+                    </span>
+                    <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-primary/10 text-primary border border-primary/20">
+                      description
+                    </span>
+                    <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-primary/10 text-primary border border-primary/20">
+                      price
+                    </span>
+                    <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-primary/10 text-primary border border-primary/20">
+                      stock
+                    </span>
+                    <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-surface-container-low text-on-surface-variant border border-outline-variant/30">
+                      image
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dropzone */}
+              <div
+                onClick={() => bulkFileInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.add(
+                    "!border-primary",
+                    "!bg-primary/5",
+                  );
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.remove(
+                    "!border-primary",
+                    "!bg-primary/5",
+                  );
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.remove(
+                    "!border-primary",
+                    "!bg-primary/5",
+                  );
+                  const dropped = e.dataTransfer.files[0];
+                  if (
+                    dropped &&
+                    (dropped.name.endsWith(".zip") ||
+                      dropped.type.includes("zip"))
+                  ) {
+                    setBulkFile(dropped);
+                  } else {
+                    toast.error("Please drop a valid .zip file");
+                  }
+                }}
+                className={`border-[1.5px] border-dashed rounded-[14px] py-8 px-6 text-center cursor-pointer transition-colors ${
+                  bulkFile
+                    ? "bg-primary/5 border-primary"
+                    : "border-outline-variant hover:bg-surface-container-low hover:border-primary/50"
+                }`}
+              >
+                <input
+                  ref={bulkFileInputRef}
+                  type="file"
+                  accept=".zip,application/zip,application/x-zip,application/x-zip-compressed,application/octet-stream"
+                  className="hidden"
+                  onChange={(e) => setBulkFile(e.target.files[0] || null)}
+                />
+
+                <span className="material-symbols-outlined text-[28px] text-on-surface-variant mb-2.5 block">
+                  {bulkFile ? "folder_zip" : "cloud_upload"}
+                </span>
+
+                {bulkFile ? (
+                  <p className="text-[14px] font-medium text-primary m-0 leading-tight">
+                    {bulkFile.name}
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-[14px] font-medium text-on-surface mb-1 leading-tight">
+                      Drag & drop your ZIP file
+                    </p>
+                    <p className="text-[12px] text-on-surface-variant m-0 leading-tight">
+                      or{" "}
+                      <span className="text-primary hover:underline">
+                        browse to upload
+                      </span>{" "}
+                      &nbsp;·&nbsp; max 50 MB
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex gap-[10px] mt-5">
+                <button
+                  onClick={() => {
+                    setBulkModalOpen(false);
+                    setBulkFile(null);
+                  }}
+                  disabled={bulkUploading}
+                  className="flex-1 p-[11px] rounded-[10px] border border-outline-variant/40 bg-transparent text-[14px] font-medium text-on-surface-variant cursor-pointer hover:bg-surface-container-low hover:text-on-surface transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={!bulkFile || bulkUploading}
+                  onClick={async () => {
+                    if (!bulkFile) return;
+                    setBulkUploading(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append("zipFile", bulkFile);
+                      const res = await api.post(
+                        "/products/bulk-import",
+                        formData,
+                        {
+                          headers: { "Content-Type": "multipart/form-data" },
+                        },
+                      );
+                      setBulkResult(res.data);
+                    } catch (err) {
+                      toast.error(err?.message || "Bulk import failed");
+                    } finally {
+                      setBulkUploading(false);
+                    }
+                  }}
+                  className="flex-[2] p-[11px] rounded-[10px] border-none bg-primary text-[14px] font-medium text-on-primary cursor-pointer hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {bulkUploading ? (
+                    <>
+                      <span className="material-symbols-outlined text-[16px] animate-spin">
+                        progress_activity
+                      </span>
+                      Importing...
+                    </>
+                  ) : (
+                    "Import products"
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };
