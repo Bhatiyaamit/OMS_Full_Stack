@@ -99,6 +99,18 @@
     background: #e2e8f0; /* bg-slate-200 */
     border-radius: 9999px;
   }
+
+  /* Force pointer cursors universally on clickable elements */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  [role="button"]:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.6;
+  }
 }
 
 @layer utilities {

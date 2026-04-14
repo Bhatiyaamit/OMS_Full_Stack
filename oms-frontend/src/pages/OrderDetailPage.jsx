@@ -386,13 +386,131 @@ const OrderDetailPage = () => {
                   {order.items?.length || 0} items
                 </span>
               </div>
-              <div className="pt-2 border-t border-surface-container/50 flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                  Total Amount
-                </span>
-                <span className="text-base font-black text-primary">
-                  ₹{parseFloat(order.totalAmount).toLocaleString()}
-                </span>
+
+              <div className="pt-4 border-t border-surface-container/60 mt-2 space-y-3">
+                <p className="text-xs font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5 mb-1">
+                  <span className="material-symbols-outlined text-[14px]">
+                    receipt_long
+                  </span>
+                  Receipt Breakdown
+                </p>
+
+                {(() => {
+                  const orderSubtotal =
+                    order.items?.reduce(
+                      (sum, item) =>
+                        sum +
+                        parseFloat(
+                          item.product?.price || item.priceAtPurchase,
+                        ) *
+                          item.quantity,
+                      0,
+                    ) || 0;
+                  const purchasesTotal =
+                    order.items?.reduce(
+                      (sum, item) =>
+                        sum + parseFloat(item.priceAtPurchase) * item.quantity,
+                      0,
+                    ) || 0;
+                  const itemDiscount = orderSubtotal - purchasesTotal;
+                  const couponDiscount = parseFloat(order.discountAmount || 0);
+                  const totalSavings = itemDiscount + couponDiscount;
+
+                  return (
+                    <>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-on-surface-variant font-medium">
+                          Subtotal
+                        </span>
+                        <span className="font-semibold text-on-surface">
+                          ₹
+                          {orderSubtotal.toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+
+                      {totalSavings > 0 && (
+                        <>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-on-surface-variant font-medium">
+                              Total Savings
+                            </span>
+                            <span className="font-bold text-green-600">
+                              -₹
+                              {totalSavings.toLocaleString("en-IN", {
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                          </div>
+
+                          {itemDiscount > 0 && (
+                            <div className="flex justify-between items-center text-xs pl-2">
+                              <span className="text-on-surface-variant/80">
+                                ↳ Item Discount
+                              </span>
+                              <span className="text-green-600/80">
+                                -₹
+                                {itemDiscount.toLocaleString("en-IN", {
+                                  maximumFractionDigits: 2,
+                                })}
+                              </span>
+                            </div>
+                          )}
+
+                          {couponDiscount > 0 && (
+                            <div className="flex justify-between items-center text-xs pl-2">
+                              <span className="text-on-surface-variant/80">
+                                ↳ Coupon ({order.couponCode || "Promo"})
+                              </span>
+                              <span className="text-green-600/80">
+                                -₹
+                                {couponDiscount.toLocaleString("en-IN", {
+                                  maximumFractionDigits: 2,
+                                })}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-on-surface-variant font-medium">
+                          Shipping Fee
+                        </span>
+                        <span className="font-semibold text-on-surface flex items-center gap-1">
+                          ₹0{" "}
+                          <span className="text-[10px] bg-surface-container-low px-1.5 py-0.5 rounded text-on-surface-variant uppercase tracking-widest font-black">
+                            Free
+                          </span>
+                        </span>
+                      </div>
+
+                      <div className="pt-3 border-t border-surface-container/60 flex justify-between items-center mt-2">
+                        <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                          Total Paid
+                        </span>
+                        <div className="text-right">
+                          {totalSavings > 0 && (
+                            <p className="text-[10px] line-through text-on-surface-variant font-medium mb-0.5">
+                              ₹
+                              {orderSubtotal.toLocaleString("en-IN", {
+                                maximumFractionDigits: 2,
+                              })}
+                            </p>
+                          )}
+                          <span className="text-xl font-black text-primary leading-none block">
+                            ₹
+                            {parseFloat(order.totalAmount).toLocaleString(
+                              "en-IN",
+                              { maximumFractionDigits: 2 },
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="pt-6">
@@ -419,13 +537,9 @@ const OrderDetailPage = () => {
           {/* Card 5: Delivery Address */}
           <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-container p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-on-surface">Deliver To</h2>
-              <Link
-                to="/profile"
-                className="text-xs font-bold text-primary hover:underline transition-all"
-              >
-                Change
-              </Link>
+              <h2 className="text-lg font-bold text-on-surface">
+                {order.status === "DELIVERED" ? "Delivered To" : "Deliver To"}
+              </h2>
             </div>
 
             {addressComplete ? (

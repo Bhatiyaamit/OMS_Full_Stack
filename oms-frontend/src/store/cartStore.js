@@ -27,7 +27,7 @@ import {
 const useCartStore = create(
   persist(
     (set, get) => ({
-      items: [],         // [{ id, name, price, stock, image, quantity }]
+      items: [], // [{ id, name, price, stock, image, quantity }]
       isGuestCart: true, // true until user logs in
 
       /* ── Add one unit of a product ── */
@@ -40,7 +40,7 @@ const useCartStore = create(
               items: state.items.map((i) =>
                 i.id === product.id
                   ? { ...i, quantity: Math.min(i.quantity + 1, product.stock) }
-                  : i
+                  : i,
               ),
             };
           }
@@ -48,11 +48,13 @@ const useCartStore = create(
             items: [
               ...state.items,
               {
-                id:       product.id,
-                name:     product.name,
-                price:    product.price,
-                stock:    product.stock,
-                image:    product.image,
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                stock: product.stock,
+                image: product.image,
+                discountType: product.discountType,
+                discountValue: product.discountValue,
                 quantity: 1,
               },
             ],
@@ -64,7 +66,9 @@ const useCartStore = create(
           const item = get().items.find((i) => i.id === product.id);
           try {
             await patchCartItem(product.id, item?.quantity ?? 1);
-          } catch (_) { /* silent — local state already updated */ }
+          } catch (_) {
+            /* silent — local state already updated */
+          }
         }
       },
 
@@ -81,7 +85,7 @@ const useCartStore = create(
           newQty = existing.quantity - 1;
           return {
             items: state.items.map((i) =>
-              i.id === productId ? { ...i, quantity: newQty } : i
+              i.id === productId ? { ...i, quantity: newQty } : i,
             ),
           };
         });
@@ -89,18 +93,24 @@ const useCartStore = create(
         if (isAuthenticated) {
           try {
             await patchCartItem(productId, newQty);
-          } catch (_) { /* silent */ }
+          } catch (_) {
+            /* silent */
+          }
         }
       },
 
       /* ── Drop item entirely ── */
       deleteItem: async (productId, isAuthenticated = false) => {
-        set((state) => ({ items: state.items.filter((i) => i.id !== productId) }));
+        set((state) => ({
+          items: state.items.filter((i) => i.id !== productId),
+        }));
 
         if (isAuthenticated) {
           try {
             await patchCartItem(productId, 0);
-          } catch (_) { /* silent */ }
+          } catch (_) {
+            /* silent */
+          }
         }
       },
 
@@ -111,7 +121,9 @@ const useCartStore = create(
         if (isAuthenticated) {
           try {
             await deleteCart();
-          } catch (_) { /* silent */ }
+          } catch (_) {
+            /* silent */
+          }
         }
       },
 
@@ -155,19 +167,22 @@ const useCartStore = create(
           const dbItems = await fetchCart();
           // Server wins — replace local state entirely
           set({ items: dbItems, isGuestCart: false });
-        } catch (_) { /* keep local items if server is unreachable */ }
+        } catch (_) {
+          /* keep local items if server is unreachable */
+        }
       },
 
       /* ── Mark cart as belonging to an authenticated user ── */
       setAuthenticated: () => set({ isGuestCart: false }),
-
-
     }),
     {
       name: "shopnest-cart",
-      partialize: (state) => ({ items: state.items, isGuestCart: state.isGuestCart }),
-    }
-  )
+      partialize: (state) => ({
+        items: state.items,
+        isGuestCart: state.isGuestCart,
+      }),
+    },
+  ),
 );
 
 export default useCartStore;

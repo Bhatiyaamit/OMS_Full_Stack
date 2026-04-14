@@ -65,6 +65,12 @@ const MainLayout = () => {
       roles: ["ADMIN", "MANAGER", "CUSTOMER"],
     },
     {
+      label: "Coupons",
+      path: "/coupons",
+      icon: "local_offer",
+      roles: ["ADMIN", "MANAGER"],
+    },
+    {
       label: "My Cart",
       path: "/cart",
       icon: "shopping_cart",
@@ -73,7 +79,7 @@ const MainLayout = () => {
   ];
 
   const filteredNav = navItems.filter((item) =>
-    item.roles.includes(user?.role || "CUSTOMER")
+    item.roles.includes(user?.role || "CUSTOMER"),
   );
 
   if (isLoading) {
@@ -158,20 +164,20 @@ const MainLayout = () => {
       </aside>
 
       {/* ── Main Content Area ── */}
-      <main
-        className="flex-1 min-w-0 min-h-screen flex flex-col transition-all duration-300 ease-in-out overflow-x-hidden"
-      >
+      <main className="flex-1 min-w-0 min-h-screen flex flex-col transition-all duration-300 ease-in-out overflow-x-hidden">
         {/* Mobile/Tablet header line (visible below xl). 
             If your page has its own hamburger, you can choose to use that instead. 
             We keep this generic one. */}
         <header className="xl:hidden h-16 shrink-0 bg-white border-b border-slate-100 flex items-center px-4 sticky top-0 z-10 w-full">
-           <button
-             onClick={() => setIsMobileOpen((open) => !open)}
-             className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-slate-600 transition-colors"
-           >
-             <span className="material-symbols-outlined">menu</span>
-           </button>
-           <span className="ml-2 font-black text-slate-900 tracking-tighter text-lg">OMS</span>
+          <button
+            onClick={() => setIsMobileOpen((open) => !open)}
+            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-slate-600 transition-colors"
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <span className="ml-2 font-black text-slate-900 tracking-tighter text-lg">
+            OMS
+          </span>
         </header>
 
         {/* Scrollable Container (Page-level scrolling) */}

@@ -11,6 +11,7 @@ const productRoutes = require("./routes/product.routes");
 const orderRoutes = require("./routes/order.routes");
 const cartRoutes = require("./routes/cart.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const couponRoutes = require("./routes/coupon.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -23,10 +24,7 @@ app.use(
   }),
 );
 // ── Stripe Webhook (Must be before express.json) ───────
-app.use(
-  "/api/orders/webhook",
-  express.raw({ type: "application/json" })
-);
+app.use("/api/orders/webhook", express.raw({ type: "application/json" }));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -38,6 +36,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/coupons", couponRoutes);
 
 // ── Swagger docs ──────────────────────────────────────
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -7,6 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  MANAGER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
 model User {
   id        String   @id @default(uuid())
   name      String
@@ -28,18 +47,37 @@ model User {
 }
 
 model Product {
-  id          String      @id @default(uuid())
-  name        String      @unique
-  description String?
-  price       Float
-  stock       Int         @default(0)
-  image       String?
-  orderItems  OrderItem[]
-  cartItems   CartItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id            String        @id @default(uuid())
+  name          String        @unique
+  description   String?
+  price         Float
+  stock         Int           @default(0)
+  image         String?
+  discountType  DiscountType?
+  discountValue Float?        @default(0)
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@map("products")
+}
+
+model Coupon {
+  id            String       @id @default(uuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Float
+  minAmount     Float        @default(0)
+  maxDiscount   Float?
+  expiryDate    DateTime
+  usageLimit    Int          @default(1)
+  usedCount     Int          @default(0)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("coupons")
 }
 
 model Order {
@@ -48,6 +86,8 @@ model Order {
   user            User        @relation(fields: [userId], references: [id])
   items           OrderItem[]
   totalAmount     Float
+  discountAmount  Float       @default(0)
+  couponCode      String?
   status          OrderStatus @default(PENDING)
   stripePaymentId String?
   createdAt       DateTime    @default(now())
@@ -66,20 +106,6 @@ model OrderItem {
   priceAtPurchase Float
 
   @@map("order_items")
-}
-
-enum Role {
-  ADMIN
-  MANAGER
-  CUSTOMER
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  SHIPPED
-  DELIVERED
-  CANCELLED
 }
 
 model Cart {

@@ -56,6 +56,9 @@ const createProduct = asyncHandler(async (req, res) => {
     ...req.body,
     price: Number(req.body.price),
     stock: Number(req.body.stock),
+    discountValue: req.body.discountValue ? Number(req.body.discountValue) : 0,
+    // Empty string → null so Prisma stores NULL (no discount)
+    discountType: req.body.discountType || null,
   };
   const parsed = createProductSchema.safeParse(body);
   if (!parsed.success) throw new ApiError(422, parsed.error.errors[0].message);
@@ -86,14 +89,16 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   const body = { ...req.body };
   if (body.price) body.price = Number(body.price);
-  if (body.stock) body.stock = Number(body.stock);
+  if (body.stock !== undefined) body.stock = Number(body.stock);
+  if (body.discountValue !== undefined)
+    body.discountValue = Number(body.discountValue);
+  if (body.discountType === "") body.discountType = null;
 
   const parsed = updateProductSchema.safeParse(body);
   if (!parsed.success) throw new ApiError(422, parsed.error.errors[0].message);
 
   let imageUrl = existing.image;
   if (req.file) {
-    // Delete old image from Cloudinary if it exists
     if (existing.image) await deleteFromCloudinary(existing.image);
     imageUrl = await uploadToCloudinary(req.file.path, "oms/products");
   }

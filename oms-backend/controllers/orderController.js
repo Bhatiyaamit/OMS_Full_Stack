@@ -18,8 +18,13 @@ const placeOrder = asyncHandler(async (req, res) => {
   const parsed = createOrderSchema.safeParse(req.body);
   if (!parsed.success) throw new ApiError(422, parsed.error.errors[0].message);
 
-  const { items, stripePaymentId } = parsed.data;
-  const order = await placeOrderService(req.user.id, items, stripePaymentId || null);
+  const { items, stripePaymentId, couponCode } = parsed.data;
+  const order = await placeOrderService(
+    req.user.id,
+    items,
+    stripePaymentId || null,
+    couponCode || null,
+  );
 
   res.status(201).json({ success: true, data: order });
 });
@@ -118,13 +123,16 @@ const createPaymentIntent = asyncHandler(async (req, res) => {
 
   const result = await createPaymentIntentService(
     req.user.id,
-    parsed.data.items
+    parsed.data.items,
+    parsed.data.couponCode || null,
   );
 
   res.json({
     success: true,
     clientSecret: result.clientSecret,
     paymentIntentId: result.paymentIntentId,
+    productSubtotal: result.productSubtotal,
+    discountAmount: result.discountAmount,
     totalAmount: result.totalAmount,
   });
 });
@@ -138,7 +146,7 @@ const handleWebhook = asyncHandler(async (req, res) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET
+      process.env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (err) {
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
@@ -150,7 +158,7 @@ const handleWebhook = asyncHandler(async (req, res) => {
     const userId = paymentIntent.metadata.userId;
 
     console.log(
-      `PaymentIntent ${paymentIntent.id} succeeded for user ${userId}`
+      `PaymentIntent ${paymentIntent.id} succeeded for user ${userId}`,
     );
   }
 

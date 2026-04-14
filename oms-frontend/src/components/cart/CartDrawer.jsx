@@ -34,9 +34,22 @@ const CartDrawer = ({ open, onClose }) => {
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
+  const effectiveItemPrice = (item) => {
+    const price = parseFloat(item.price);
+    if (!item.discountType || !item.discountValue || item.discountValue <= 0)
+      return price;
+    let discounted = price;
+    if (item.discountType === "PERCENTAGE") {
+      discounted -= (price * item.discountValue) / 100;
+    } else if (item.discountType === "FIXED") {
+      discounted -= item.discountValue;
+    }
+    return Math.max(0, discounted);
+  };
+
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
   const totalPrice = items.reduce(
-    (s, i) => s + parseFloat(i.price) * i.quantity,
+    (s, i) => s + effectiveItemPrice(i) * i.quantity,
     0,
   );
 
@@ -163,79 +176,107 @@ const CartDrawer = ({ open, onClose }) => {
                 </button>
               </div>
             ) : (
-              items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 bg-slate-50 rounded-2xl p-4 border border-slate-100 group"
-                >
-                  {/* Image */}
-                  <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 overflow-hidden flex-shrink-0">
-                    {getImageUrl(item.image) ? (
-                      <img
-                        src={getImageUrl(item.image)}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-slate-300">
-                          image
-                        </span>
+              items.map((item) => {
+                const effPrice = effectiveItemPrice(item);
+                const hasDiscount = effPrice < parseFloat(item.price);
+
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-4 bg-slate-50 rounded-2xl p-4 border border-slate-100 group"
+                  >
+                    {/* Image */}
+                    <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden flex-shrink-0">
+                      {getImageUrl(item.image) ? (
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="material-symbols-outlined text-slate-300">
+                            image
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-900 text-base truncate">
+                        {item.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        {hasDiscount && (
+                          <p className="text-xs line-through text-slate-400 font-medium">
+                            ₹{parseFloat(item.price).toLocaleString()}
+                          </p>
+                        )}
+                        <p
+                          className={`text-sm font-black ${hasDiscount ? "text-red-500" : "text-slate-900"}`}
+                        >
+                          ₹
+                          {(effPrice * item.quantity).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}
+                        </p>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-900 text-sm truncate">
-                      {item.name}
-                    </p>
-                    <p className="text-xs font-black text-slate-900 mt-0.5">
-                      ₹
-                      {(
-                        parseFloat(item.price) * item.quantity
-                      ).toLocaleString()}
-                    </p>
-                    <p className="text-[10px] font-medium text-slate-400">
-                      ₹{parseFloat(item.price).toLocaleString()} each
-                    </p>
-                  </div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <p className="text-xs font-medium text-slate-400">
+                          ₹
+                          {effPrice.toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          each
+                        </p>
+                        {hasDiscount && (
+                          <span className="bg-red-500 text-white text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded shadow-sm">
+                            {item.discountType === "PERCENTAGE"
+                              ? `${item.discountValue}% OFF`
+                              : `₹${item.discountValue} OFF`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                  {/* Stepper + delete */}
-                  <div className="flex flex-col items-end gap-2">
-                    <button
-                      onClick={() => deleteItem(item.id, !isGuest)}
-                      className="text-slate-300 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <span className="material-symbols-outlined text-base">
-                        delete
-                      </span>
-                    </button>
-                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-2 py-1">
+                    {/* Stepper + delete */}
+                    <div className="flex flex-col items-end gap-2">
                       <button
-                        onClick={() => removeItem(item.id, !isGuest)}
-                        className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
+                        onClick={() => deleteItem(item.id, !isGuest)}
+                        className="text-slate-300 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
                       >
-                        <span className="material-symbols-outlined text-slate-600 text-sm">
-                          remove
+                        <span className="material-symbols-outlined text-base">
+                          delete
                         </span>
                       </button>
-                      <span className="text-sm font-black text-slate-900 w-4 text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => addItem(item, !isGuest)}
-                        disabled={item.quantity >= item.stock}
-                        className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center hover:bg-slate-700 transition-colors disabled:opacity-40"
-                      >
-                        <span className="material-symbols-outlined text-white text-sm">
-                          add
+                      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-2 py-1">
+                        <button
+                          onClick={() => removeItem(item.id, !isGuest)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-slate-600 text-sm">
+                            remove
+                          </span>
+                        </button>
+                        <span className="text-sm font-black text-slate-900 w-4 text-center">
+                          {item.quantity}
                         </span>
-                      </button>
+                        <button
+                          onClick={() => addItem(item, !isGuest)}
+                          disabled={item.quantity >= item.stock}
+                          className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center hover:bg-slate-700 transition-colors disabled:opacity-40"
+                        >
+                          <span className="material-symbols-outlined text-white text-sm">
+                            add
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -254,9 +295,7 @@ const CartDrawer = ({ open, onClose }) => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 font-medium">Delivery</span>
-                  <span className="font-bold text-emerald-600">
-                    {totalPrice >= 999 ? "Free" : "₹99"}
-                  </span>
+                  <span className="font-bold text-emerald-600">Free</span>
                 </div>
                 <div className="h-px bg-slate-100 my-2" />
                 <div className="flex justify-between">
@@ -264,10 +303,7 @@ const CartDrawer = ({ open, onClose }) => {
                     Total
                   </span>
                   <span className="font-black text-slate-900 text-xl">
-                    ₹
-                    {(
-                      totalPrice + (totalPrice >= 999 ? 0 : 99)
-                    ).toLocaleString()}
+                    ₹{totalPrice.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -295,13 +331,6 @@ const CartDrawer = ({ open, onClose }) => {
                     lock
                   </span>
                   Your cart is saved locally — won't disappear on refresh
-                </p>
-              )}
-
-              {totalPrice < 999 && (
-                <p className="text-center text-[11px] font-bold text-slate-500">
-                  Add ₹{(999 - totalPrice).toLocaleString()} more for{" "}
-                  <span className="text-emerald-600">free delivery</span>
                 </p>
               )}
             </div>

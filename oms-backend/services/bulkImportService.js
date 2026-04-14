@@ -89,12 +89,21 @@ const processRow = async (row, imagesDir) => {
   const price = parseFloat(row.price);
   const stock = parseInt(row.stock, 10);
   const imageFile = String(row.image || "").trim();
+  const rawDiscountType = String(row.discountType || "NONE")
+    .trim()
+    .toUpperCase();
+  const discountType = ["NONE", "PERCENTAGE", "FIXED"].includes(rawDiscountType)
+    ? rawDiscountType
+    : "NONE";
+  const discountValue = parseFloat(row.discountValue || 0) || 0;
 
   // Validate required fields
   if (!name) throw new Error("Missing required field: name");
   if (!description) throw new Error("Missing required field: description");
   if (isNaN(price) || price < 0) throw new Error("Invalid price value");
   if (isNaN(stock) || stock < 0) throw new Error("Invalid stock value");
+  if (isNaN(discountValue) || discountValue < 0)
+    throw new Error("Invalid discountValue");
 
   // Check for duplicate product name in DB
   const existing = await prisma.product.findUnique({ where: { name } });
@@ -116,7 +125,15 @@ const processRow = async (row, imagesDir) => {
     // If image file not found — continue without image (no hard failure)
   }
 
-  return { name, description, price, stock, image: imageUrl };
+  return {
+    name,
+    description,
+    price,
+    stock,
+    image: imageUrl,
+    discountType,
+    discountValue,
+  };
 };
 
 // ── Utility: recursively find a file by name ─────────────

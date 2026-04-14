@@ -13,7 +13,7 @@ import useCartStore from "../store/cartStore";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm = ({ items, totalAmount }) => {
+const CheckoutForm = ({ items, totalAmount, couponCode }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ const CheckoutForm = ({ items, totalAmount }) => {
     // Step 1 — confirm payment with Stripe
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      redirect: "if_required", // stay on page, no redirect
+      redirect: "if_required",
     });
 
     if (error) {
@@ -43,10 +43,11 @@ const CheckoutForm = ({ items, totalAmount }) => {
 
     if (paymentIntent.status === "succeeded") {
       try {
-        // Step 2 — create order in our backend
+        // Step 2 — create order in our backend (server re-validates coupon)
         const res = await api.post("/orders", {
           items,
           stripePaymentId: paymentIntent.id,
+          couponCode: couponCode || null,
         });
 
         const order = res.data;
@@ -54,7 +55,6 @@ const CheckoutForm = ({ items, totalAmount }) => {
         // Step 3 — clear cart (local + server)
         clearCart(true);
 
-        // Step 4 — go to success page
         toast.success("Payment successful!", {
           description: "Your order has been placed.",
         });
@@ -73,7 +73,7 @@ const CheckoutForm = ({ items, totalAmount }) => {
 
   return (
     <form onSubmit={handlePay}>
-      {/* Stripe PaymentElement — renders card input */}
+      {/* Stripe PaymentElement */}
       <div className="mb-6">
         <PaymentElement
           options={{
@@ -85,10 +85,7 @@ const CheckoutForm = ({ items, totalAmount }) => {
 
       {/* Card error message */}
       {cardError && (
-        <div
-          className="flex items-center gap-2 bg-red-50 border
-          border-red-100 rounded-xl px-4 py-3 mb-6"
-        >
+        <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-6">
           <span className="material-symbols-outlined text-error text-base">
             error
           </span>
@@ -110,10 +107,7 @@ const CheckoutForm = ({ items, totalAmount }) => {
       >
         {paying ? (
           <>
-            <span
-              className="material-symbols-outlined
-              text-base animate-spin"
-            >
+            <span className="material-symbols-outlined text-base animate-spin">
               progress_activity
             </span>
             Processing Payment...
@@ -130,10 +124,7 @@ const CheckoutForm = ({ items, totalAmount }) => {
       </button>
 
       {/* Secure badge */}
-      <div
-        className="flex items-center justify-center gap-2
-        mt-4 text-xs text-on-surface-variant"
-      >
+      <div className="flex items-center justify-center gap-2 mt-4 text-xs text-on-surface-variant">
         <span className="material-symbols-outlined text-sm">lock</span>
         Secured by Stripe · 256-bit SSL encryption
       </div>
@@ -145,20 +136,21 @@ const CheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { clientSecret, totalAmount, items } = location.state || {};
+  const {
+    clientSecret,
+    totalAmount,
+    productSubtotal,
+    discountAmount,
+    couponCode,
+    items,
+  } = location.state || {};
 
-  // Guard — if user navigates here directly without state
+  // Guard
   if (!clientSecret || !items) {
     return (
       <div className="max-w-lg mx-auto py-20 text-center">
-        <div
-          className="bg-surface-container-lowest rounded-2xl
-          p-12 shadow-sm border border-surface-container"
-        >
-          <span
-            className="material-symbols-outlined
-            text-5xl text-outline-variant mb-6 block"
-          >
+        <div className="bg-surface-container-lowest rounded-2xl p-12 shadow-sm border border-surface-container">
+          <span className="material-symbols-outlined text-5xl text-outline-variant mb-6 block">
             shopping_cart_off
           </span>
           <h2 className="text-xl font-bold text-on-surface mb-2">
@@ -169,9 +161,7 @@ const CheckoutPage = () => {
           </p>
           <button
             onClick={() => navigate("/products")}
-            className="bg-primary text-on-primary px-8 py-3
-              rounded-full font-semibold text-sm
-              hover:bg-primary-dim transition-all"
+            className="bg-primary text-on-primary px-8 py-3 rounded-full font-semibold text-sm hover:bg-primary-dim transition-all"
           >
             Browse Products
           </button>
@@ -180,7 +170,6 @@ const CheckoutPage = () => {
     );
   }
 
-  // Stripe Elements appearance — match app theme
   const appearance = {
     theme: "stripe",
     variables: {
@@ -199,9 +188,7 @@ const CheckoutPage = () => {
         boxShadow: "none",
         padding: "14px 16px",
       },
-      ".Input:focus": {
-        boxShadow: "0 0 0 1px #005cba",
-      },
+      ".Input:focus": { boxShadow: "0 0 0 1px #005cba" },
       ".Label": {
         fontWeight: "600",
         fontSize: "11px",
@@ -213,11 +200,10 @@ const CheckoutPage = () => {
     },
   };
 
-  const options = {
-    clientSecret,
-    appearance,
-    locale: "en",
-  };
+  const options = { clientSecret, appearance, locale: "en" };
+
+  const displaySubtotal = productSubtotal ?? totalAmount;
+  const displayDiscount = discountAmount ?? 0;
 
   return (
     <div className="max-w-5xl mx-auto py-10 px-4">
@@ -225,19 +211,14 @@ const CheckoutPage = () => {
       <div className="mb-10">
         <button
           onClick={() => navigate("/cart")}
-          className="flex items-center gap-1 text-sm
-            text-on-surface-variant hover:text-on-surface
-            transition-colors mb-6"
+          className="flex items-center gap-1 text-sm text-on-surface-variant hover:text-on-surface transition-colors mb-6"
         >
           <span className="material-symbols-outlined text-base">
             arrow_back
           </span>
           Back to Cart
         </button>
-        <h1
-          className="text-3xl font-bold tracking-tight
-          text-on-surface"
-        >
+        <h1 className="text-3xl font-bold tracking-tight text-on-surface">
           Secure Checkout
         </h1>
         <p className="text-sm text-on-surface-variant mt-1">
@@ -248,29 +229,24 @@ const CheckoutPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* ── Left — Stripe Payment Form ── */}
         <div className="lg:col-span-7">
-          <div
-            className="bg-surface-container-lowest rounded-2xl
-            shadow-sm border border-surface-container p-8"
-          >
-            <h2
-              className="text-lg font-bold text-on-surface
-              tracking-tight mb-6 flex items-center gap-2"
-            >
-              <span
-                className="material-symbols-outlined
-                text-primary text-xl"
-              >
+          <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-container p-8">
+            <h2 className="text-lg font-bold text-on-surface tracking-tight mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-xl">
                 credit_card
               </span>
               Payment Details
             </h2>
 
             <Elements stripe={stripePromise} options={options}>
-              <CheckoutForm items={items} totalAmount={totalAmount} />
+              <CheckoutForm
+                items={items}
+                totalAmount={totalAmount}
+                couponCode={couponCode}
+              />
             </Elements>
           </div>
 
-          {/* Test card hint — remove in production */}
+          {/* Test card hint */}
           <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
             <span className="material-symbols-outlined text-blue-500 text-lg mt-0.5">
               info
@@ -291,49 +267,61 @@ const CheckoutPage = () => {
 
         {/* ── Right — Order Summary ── */}
         <div className="lg:col-span-5">
-          <div
-            className="bg-surface-container-lowest rounded-2xl
-            shadow-sm border border-surface-container p-8
-            sticky top-24"
-          >
-            <h2
-              className="text-lg font-bold text-on-surface
-              tracking-tight mb-6"
-            >
+          <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-container p-8 sticky top-24">
+            <h2 className="text-lg font-bold text-on-surface tracking-tight mb-6">
               Order Summary
             </h2>
 
             {/* Items list */}
             <div className="space-y-4 mb-6">
-              {items.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between
-                    py-3 border-b border-surface-container
-                    last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 rounded-lg
-                      bg-surface-container flex items-center
-                      justify-center shrink-0"
-                    >
-                      <span
-                        className="text-xs font-black
-                        text-on-surface-variant"
-                      >
-                        {item.quantity}×
-                      </span>
+              {items.map((item, i) => {
+                const basePrice = parseFloat(item.price || 0);
+                let effPrice = basePrice;
+                if (item.discountType === "PERCENTAGE" && item.discountValue > 0) {
+                  effPrice -= (basePrice * item.discountValue) / 100;
+                } else if (item.discountType === "FIXED" && item.discountValue > 0) {
+                  effPrice -= item.discountValue;
+                }
+                effPrice = Math.max(0, effPrice);
+                const hasDiscount = effPrice < basePrice;
+
+                return (
+                  <div
+                    key={i}
+                    className="flex flex-col py-3 border-b border-surface-container last:border-0 gap-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
+                          <span className="text-xs font-black text-on-surface-variant">
+                            {item.quantity}×
+                          </span>
+                        </div>
+                        <span className="text-sm font-medium text-on-surface truncate">
+                          {item.name || `Product ${i + 1}`}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end shrink-0 ml-4">
+                        <span className={`text-sm font-black ${hasDiscount ? "text-red-500" : "text-primary"}`}>
+                          ₹{effPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
                     </div>
-                    <span
-                      className="text-sm font-medium
-                      text-on-surface"
-                    >
-                      {item.name || `Product ${i + 1}`}
-                    </span>
+                    {hasDiscount && (
+                      <div className="flex items-center gap-2 ml-11">
+                        <p className="text-[10px] line-through text-slate-400 font-medium tracking-tight">
+                          ₹{basePrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </p>
+                        <span className="bg-red-500 text-white text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded shadow-sm">
+                          {item.discountType === "PERCENTAGE"
+                            ? `${item.discountValue}% OFF`
+                            : `₹${item.discountValue} OFF`}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Price breakdown */}
@@ -342,16 +330,29 @@ const CheckoutPage = () => {
                 <span className="text-sm text-on-surface-variant">
                   Subtotal
                 </span>
-                <span
-                  className="text-sm font-semibold
-                  text-on-surface"
-                >
+                <span className="text-sm font-semibold text-on-surface">
                   ₹
-                  {parseFloat(totalAmount).toLocaleString("en-IN", {
+                  {parseFloat(displaySubtotal).toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
                   })}
                 </span>
               </div>
+              {displayDiscount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-green-600 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">
+                      local_offer
+                    </span>
+                    {couponCode ? `Coupon (${couponCode})` : "Discount"}
+                  </span>
+                  <span className="text-sm font-bold text-green-600">
+                    -₹
+                    {parseFloat(displayDiscount).toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-sm text-on-surface-variant">
                   Delivery
@@ -366,23 +367,14 @@ const CheckoutPage = () => {
               </div>
             </div>
 
-            <div
-              className="border-t border-surface-container
-              my-6"
-            />
+            <div className="border-t border-surface-container my-6" />
 
             {/* Total */}
             <div className="flex justify-between items-center">
-              <span
-                className="text-xs font-bold uppercase
-                tracking-widest text-on-surface-variant"
-              >
+              <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                 Total
               </span>
-              <span
-                className="text-2xl font-black text-primary
-                tracking-tight"
-              >
+              <span className="text-2xl font-black text-primary tracking-tight">
                 ₹
                 {parseFloat(totalAmount).toLocaleString("en-IN", {
                   minimumFractionDigits: 2,
@@ -391,21 +383,11 @@ const CheckoutPage = () => {
             </div>
 
             {/* Payment badges */}
-            <div
-              className="mt-6 pt-6 border-t
-              border-surface-container flex items-center
-              justify-center gap-4"
-            >
-              <span
-                className="text-xs text-on-surface-variant
-                font-medium"
-              >
+            <div className="mt-6 pt-6 border-t border-surface-container flex items-center justify-center gap-4">
+              <span className="text-xs text-on-surface-variant font-medium">
                 Secured by
               </span>
-              <span
-                className="text-xs font-black text-primary
-                tracking-tight"
-              >
+              <span className="text-xs font-black text-primary tracking-tight">
                 STRIPE
               </span>
             </div>

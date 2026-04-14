@@ -8,6 +8,7 @@ const orderItemSchema = z.object({
 const createOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1, "Order must have at least one item"),
   stripePaymentId: z.string().optional(),
+  couponCode: z.string().optional().nullable(),
 });
 
 const updateStatusSchema = z.object({

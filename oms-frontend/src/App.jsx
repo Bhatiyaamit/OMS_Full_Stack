@@ -19,6 +19,7 @@ import OrderDetailPage from "./pages/OrderDetailPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import ProfilePage from "./pages/ProfilePage";
 import CheckoutPage from "./pages/CheckoutPage";
+import CouponsPage from "./pages/CouponsPage";
 
 // ─────────────────────────────────────────────────────────
 //  ROUTE GUARDS
@@ -79,7 +80,7 @@ function App() {
     if (user) {
       hydrateFromServer();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -115,7 +116,10 @@ function App() {
             ════════════════════════════════════════════════ */}
         <Route element={<RoleBasedLayout />}>
           {/* ── / → always redirect to /dashboard ── */}
-          <Route index element={<Navigate to={defaultDashboardPath} replace />} />
+          <Route
+            index
+            element={<Navigate to={defaultDashboardPath} replace />}
+          />
 
           {/* ── /dashboard ──────────────────────────────
               FULLY PUBLIC storefront landing page for
@@ -241,11 +245,27 @@ function App() {
             }
           />
 
+          {/* ── /coupons ────────────────────────────────
+              ADMIN / MANAGER ONLY.
+              Create, manage, and monitor discount coupons.
+              ─────────────────────────────────────────── */}
+          <Route
+            path="/coupons"
+            element={
+              <AdminRoute>
+                <CouponsPage />
+              </AdminRoute>
+            }
+          />
+
           {/* ── catch all ───────────────────────────────
               Any unknown URL → back to the correct
               dashboard based on current role
               ─────────────────────────────────────────── */}
-          <Route path="*" element={<Navigate to={defaultDashboardPath} replace />} />
+          <Route
+            path="*"
+            element={<Navigate to={defaultDashboardPath} replace />}
+          />
         </Route>
         {/* end RoleBasedLayout */}
       </Routes>

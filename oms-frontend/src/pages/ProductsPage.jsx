@@ -19,6 +19,8 @@ const productSchema = z.object({
   description: z.string().min(2, "Description is required"),
   price: z.coerce.number().positive("Price must be positive"),
   stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
+  discountType: z.enum(["NONE", "PERCENTAGE", "FIXED"]).optional(),
+  discountValue: z.coerce.number().min(0).optional(),
 });
 
 const ProductsPage = () => {
@@ -86,6 +88,7 @@ const ProductsPage = () => {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(productSchema),
@@ -260,9 +263,23 @@ const ProductsPage = () => {
     setImagePreview(null);
     setImageError("");
     if (product) {
-      reset({ name: product.name, price: product.price, stock: product.stock });
+      reset({
+        name: product.name,
+        description: product.description || "",
+        price: product.price,
+        stock: product.stock,
+        discountType: product.discountType ?? "NONE",
+        discountValue: product.discountValue ?? 0,
+      });
     } else {
-      reset({ name: "", price: "", stock: "" });
+      reset({
+        name: "",
+        description: "",
+        price: "",
+        stock: "",
+        discountType: "NONE",
+        discountValue: 0,
+      });
     }
     setDrawerOpen(true);
   };
@@ -280,8 +297,17 @@ const ProductsPage = () => {
   const onFormSubmit = (data) => {
     const formData = new FormData();
     formData.append("name", data.name);
+    formData.append("description", data.description || "");
     formData.append("price", data.price);
     formData.append("stock", data.stock);
+    // Only send discount fields if a type is actually selected
+    if (data.discountType && data.discountType !== "NONE") {
+      formData.append("discountType", data.discountType);
+      formData.append("discountValue", data.discountValue ?? 0);
+    } else {
+      formData.append("discountType", "");
+      formData.append("discountValue", 0);
+    }
     if (imageFile) formData.append("image", imageFile);
 
     if (editingProduct) {
@@ -308,14 +334,38 @@ const ProductsPage = () => {
   const handleDelete = useCallback(
     (id) => {
       Modal.confirm({
-        title: "Delete Product",
-        content: "Are you sure you want to permanently remove this item?",
+        title: (
+          <div className="text-xl font-bold tracking-tight text-slate-900 mt-1">
+            Delete Product?
+          </div>
+        ),
+        content: (
+          <div className="text-sm font-medium text-slate-500 mt-2">
+            Are you sure you want to permanently remove this item? This action
+            cannot be undone.
+          </div>
+        ),
+        icon: (
+          <span className="material-symbols-outlined text-red-500 text-4xl mr-3 mt-1.5">
+            delete_forever
+          </span>
+        ),
         okText: "Yes, Delete",
-        okType: "danger",
-        cancelText: "No",
+        okButtonProps: {
+          className:
+            "bg-red-500 hover:bg-red-600 text-white border-none shadow-sm font-semibold rounded-full px-6 h-10",
+        },
+        cancelText: "Cancel",
+        cancelButtonProps: {
+          className:
+            "border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold rounded-full px-6 h-10",
+        },
+        className:
+          "rounded-3xl overflow-hidden [&_.ant-modal-content]:rounded-[1.5rem] [&_.ant-modal-content]:p-8 shadow-2xl font-inter",
+        maskStyle: { backdropFilter: "blur(4px)" },
         onOk: () => {
           deleteProduct(id, {
-            onSuccess: () => toast.success("Product deleted"),
+            onSuccess: () => toast.success("Product deleted successfully"),
           });
         },
       });
@@ -330,6 +380,36 @@ const ProductsPage = () => {
     if (stock < 10)
       return { text: "Low Stock", classes: "bg-amber-100 text-amber-700" };
     return { text: "In Stock", classes: "bg-emerald-100 text-emerald-700" };
+  };
+
+  // ── Product-level discount helper ──
+  const calcDiscountedPrice = (product) => {
+    const price = parseFloat(product.price);
+    if (
+      !product.discountType ||
+      !product.discountValue ||
+      product.discountValue <= 0
+    ) {
+      return { discounted: price, hasDiscount: false, saving: 0 };
+    }
+    let discounted;
+    if (product.discountType === "PERCENTAGE") {
+      discounted = price - (price * product.discountValue) / 100;
+    } else if (product.discountType === "FIXED") {
+      discounted = price - product.discountValue;
+    } else {
+      return { discounted: price, hasDiscount: false, saving: 0 };
+    }
+    discounted = Math.max(0, discounted);
+    return {
+      discounted,
+      hasDiscount: true,
+      saving: price - discounted,
+      label:
+        product.discountType === "PERCENTAGE"
+          ? `${product.discountValue}% OFF`
+          : `₹${product.discountValue} OFF`,
+    };
   };
 
   if (isLoading && !productsData) {
@@ -384,7 +464,7 @@ const ProductsPage = () => {
               {...register("description")}
               placeholder="e.g. A premium high-performance product..."
               rows={3}
-              className={`block w-full rounded-xl border-0 bg-surface-container-low py-4 px-4 text-on-surface ring-1 ring-inset placeholder:text-outline focus:bg-surface-container-highest focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200 resize-none ${
+              className={`block w-full rounded-3xl border-0 bg-surface-container-low py-4 px-4 text-on-surface ring-1 ring-inset placeholder:text-outline focus:bg-surface-container-highest focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200 resize-none ${
                 errors.description ? "ring-error/40" : "ring-outline-variant/15"
               }`}
             />
@@ -439,6 +519,98 @@ const ProductsPage = () => {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Discount */}
+        <div className="group">
+          <label className="font-inter text-xs font-semibold uppercase tracking-widest text-on-surface-variant opacity-70">
+            Product Discount
+          </label>
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            {/* Type selector */}
+            <div>
+              <select
+                {...register("discountType")}
+                className="block w-full rounded-xl border-0 bg-surface-container-low py-4 px-4 text-on-surface ring-1 ring-inset ring-outline-variant/15 focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200 outline-none"
+              >
+                <option value="NONE">No Discount</option>
+                <option value="PERCENTAGE">Percentage (%)</option>
+                <option value="FIXED">Fixed Amount (₹)</option>
+              </select>
+            </div>
+            {/* Value input — only shown when a type is chosen */}
+            <div>
+              <input
+                {...register("discountValue")}
+                type="number"
+                min="0"
+                step="any"
+                placeholder="e.g. 10"
+                className="block w-full rounded-xl border-0 bg-surface-container-low py-4 px-4 text-on-surface ring-1 ring-inset ring-outline-variant/15 placeholder:text-outline focus:bg-surface-container-highest focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200"
+              />
+              <p className="text-[11px] text-on-surface-variant mt-1 ml-1">
+                {/* Contextual hint */}
+                Leave 0 if no discount
+              </p>
+            </div>
+          </div>
+
+          {/* Live Discount Preview */}
+          {(() => {
+            const currentPrice = parseFloat(watch("price")) || 0;
+            const currentDiscountType = watch("discountType");
+            const currentDiscountValue =
+              parseFloat(watch("discountValue")) || 0;
+
+            if (
+              currentPrice > 0 &&
+              currentDiscountType &&
+              currentDiscountType !== "NONE" &&
+              currentDiscountValue > 0
+            ) {
+              const { discounted, saving, label } = calcDiscountedPrice({
+                price: currentPrice,
+                discountType: currentDiscountType,
+                discountValue: currentDiscountValue,
+              });
+
+              return (
+                <div className="mt-4 bg-emerald-50 border border-emerald-100 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">
+                      Final Price Preview
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-black text-slate-900">
+                        ₹
+                        {discounted.toLocaleString("en-IN", {
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                      <span className="text-xs font-medium text-slate-400 line-through">
+                        ₹
+                        {currentPrice.toLocaleString("en-IN", {
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right flex flex-col items-end">
+                    <span className="bg-emerald-600 text-white text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded shadow-sm mb-1">
+                      {label}
+                    </span>
+                    <span className="text-[13px] font-bold text-emerald-700">
+                      Saving: ₹
+                      {saving.toLocaleString("en-IN", {
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {/* Image drop zone */}
@@ -857,6 +1029,11 @@ const ProductsPage = () => {
                     const isOutOfStock = product.stock === 0;
                     const isLowStock = product.stock > 0 && product.stock <= 10;
                     const qty = getCartQty(product.id);
+                    const {
+                      discounted,
+                      hasDiscount,
+                      label: discountLabel,
+                    } = calcDiscountedPrice(product);
 
                     return (
                       <div
@@ -886,18 +1063,26 @@ const ProductsPage = () => {
                               </span>
                             </div>
                           )}
+                          {/* Discount badge — top right */}
+                          {hasDiscount && !isOutOfStock && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <span className="flex items-center bg-white text-red-500 text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded shadow-sm border border-red-100">
+                                {discountLabel}
+                              </span>
+                            </div>
+                          )}
 
                           {/* Stock badge — top left */}
                           {isOutOfStock && (
-                            <div className="absolute top-4 left-4 z-10">
-                              <span className="bg-slate-900 text-white text-[9px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full shadow-sm">
+                            <div className="absolute top-2 left-2 z-10">
+                              <span className="flex items-center bg-black text-white text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-2xl border border-amber-100">
                                 Unavailable
                               </span>
                             </div>
                           )}
                           {isLowStock && (
-                            <div className="absolute top-4 left-4 z-10">
-                              <span className="bg-amber-400 text-white text-[9px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full shadow-sm">
+                            <div className="absolute top-2 left-2 z-10">
+                              <span className="flex items-center bg-amber-400  text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-2xl border border-amber-100">
                                 Only {product.stock} left
                               </span>
                             </div>
@@ -972,11 +1157,32 @@ const ProductsPage = () => {
                             </h2>
                           </div>
                           <div className="mt-3">
-                            <span
-                              className={`text-[17px] font-black block ${isOutOfStock ? "text-slate-400" : "text-primary"}`}
-                            >
-                              ₹{parseFloat(product.price).toLocaleString()}
-                            </span>
+                            {hasDiscount ? (
+                              <>
+                                <div className="flex items-center justify-between">
+                                  {/* Struck-through original */}
+                                  <span className="text-[12px] text-slate-400 line-through font-medium block">
+                                    ₹
+                                    {parseFloat(product.price).toLocaleString()}
+                                  </span>
+                                </div>
+                                {/* Discounted price */}
+                                <span
+                                  className={`text-[17px] font-black block ${isOutOfStock ? "text-slate-400" : "text-yellow-600"}`}
+                                >
+                                  ₹
+                                  {discounted.toLocaleString("en-IN", {
+                                    maximumFractionDigits: 2,
+                                  })}
+                                </span>
+                              </>
+                            ) : (
+                              <span
+                                className={`text-[17px] font-black block ${isOutOfStock ? "text-slate-400" : "text-primary"}`}
+                              >
+                                ₹{parseFloat(product.price).toLocaleString()}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1088,12 +1294,66 @@ const ProductsPage = () => {
                   </h2>
                 </div>
 
-                {/* Price */}
-                <p
-                  className={`text-2xl md:text-3xl font-bold mb-6 ${selectedProduct.stock === 0 ? "text-slate-300" : "text-blue-600"}`}
-                >
-                  ₹{parseFloat(selectedProduct.price).toLocaleString()}
-                </p>
+                {/* Price block */}
+                {(() => {
+                  const {
+                    discounted,
+                    hasDiscount,
+                    saving,
+                    label: discountLabel,
+                  } = calcDiscountedPrice(selectedProduct);
+                  return (
+                    <div className="mb-6">
+                      {hasDiscount ? (
+                        <>
+                          {/* Discount badge */}
+                          <span className="inline-block bg-red-100 text-red-600 text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full mb-2">
+                            {discountLabel}
+                          </span>
+                          <div className="flex items-baseline gap-3">
+                            {/* Discounted price */}
+                            <span
+                              className={`text-2xl md:text-3xl font-black ${
+                                selectedProduct.stock === 0
+                                  ? "text-slate-300"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              ₹
+                              {discounted.toLocaleString("en-IN", {
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                            {/* Original price struck through */}
+                            <span className="text-slate-400 text-base line-through font-medium">
+                              ₹
+                              {parseFloat(
+                                selectedProduct.price,
+                              ).toLocaleString()}
+                            </span>
+                          </div>
+                          {/* Savings line */}
+                          <p className="text-xs font-bold text-green-600 mt-1">
+                            You save ₹
+                            {saving.toLocaleString("en-IN", {
+                              maximumFractionDigits: 2,
+                            })}
+                          </p>
+                        </>
+                      ) : (
+                        <p
+                          className={`text-2xl md:text-3xl font-bold ${
+                            selectedProduct.stock === 0
+                              ? "text-slate-300"
+                              : "text-blue-600"
+                          }`}
+                        >
+                          ₹{parseFloat(selectedProduct.price).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Divider */}
                 <div className="border-t border-slate-100 mb-5" />
@@ -1688,6 +1948,12 @@ const ProductsPage = () => {
                     </span>
                     <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-surface-container-low text-on-surface-variant border border-outline-variant/30">
                       image
+                    </span>
+                    <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-surface-container-low text-on-surface-variant border border-outline-variant/30">
+                      discountType
+                    </span>
+                    <span className="text-[12px] px-2.5 py-1 rounded-[6px] font-medium bg-surface-container-low text-on-surface-variant border border-outline-variant/30">
+                      discountValue
                     </span>
                   </div>
                 </div>

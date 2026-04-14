@@ -18,6 +18,8 @@ const getOrCreateCart = async (userId) => {
               price: true,
               stock: true,
               image: true,
+              discountType: true,
+              discountValue: true,
             },
           },
         },
@@ -38,6 +40,8 @@ const getOrCreateCart = async (userId) => {
                 price: true,
                 stock: true,
                 image: true,
+                discountType: true,
+                discountValue: true,
               },
             },
           },
@@ -59,6 +63,8 @@ const formatCartItems = (cart) =>
     price: ci.product.price,
     stock: ci.product.stock,
     image: ci.product.image,
+    discountType: ci.product.discountType,
+    discountValue: ci.product.discountValue,
     quantity: ci.quantity,
   }));
 

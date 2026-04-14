@@ -353,20 +353,32 @@ const OrdersPage = () => {
                     <p className="font-bold text-slate-900 text-sm truncate">
                       {item.product?.name || "Unknown Product"}
                     </p>
-                    <p className="text-xs text-slate-400 font-medium">
+                    <p className="text-xs text-slate-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                       Qty: {item.quantity}
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-black text-slate-900 text-sm">
+                  <div className="text-right flex-shrink-0 flex flex-col items-end">
+                    <p className={`font-black text-sm ${item.product?.price && parseFloat(item.priceAtPurchase) < parseFloat(item.product.price) ? "text-red-500" : "text-slate-900"}`}>
                       ₹
                       {(
                         parseFloat(item.priceAtPurchase) * item.quantity
-                      ).toLocaleString()}
+                      ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      ₹{parseFloat(item.priceAtPurchase).toLocaleString()} each
-                    </p>
+                    <div className="flex flex-col items-end">
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        ₹{parseFloat(item.priceAtPurchase).toLocaleString("en-IN", { maximumFractionDigits: 2 })} each
+                      </p>
+                      {item.product?.price && parseFloat(item.priceAtPurchase) < parseFloat(item.product.price) && (
+                        <div className="flex items-center gap-1 mt-0.5 max-w-[150px] justify-end">
+                          <p className="text-[9px] line-through text-slate-300 font-medium">
+                            ₹{parseFloat(item.product.price).toLocaleString()}
+                          </p>
+                          <span className="bg-red-50 text-red-500 border border-red-100 text-[8px] font-black uppercase px-1 py-0 rounded leading-none whitespace-nowrap overflow-hidden">
+                            {(parseFloat(item.product.price) - parseFloat(item.priceAtPurchase)).toLocaleString("en-IN", { maximumFractionDigits: 0 })} OFF
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -703,26 +715,34 @@ const OrdersPage = () => {
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 pr-4">
                                   <p className="font-bold text-slate-900 text-sm truncate">
                                     {item.product?.name || "Unknown Product"}
                                   </p>
-                                  <p className="text-[11px] text-slate-400 font-medium">
-                                    Qty: {item.quantity} &bull; ₹
-                                    {parseFloat(
-                                      item.priceAtPurchase,
-                                    ).toLocaleString()}{" "}
-                                    each
+                                  <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1 flex-wrap">
+                                    <span>Qty: {item.quantity}</span>
+                                    <span className="opacity-50">&bull;</span>
+                                    <span>₹{parseFloat(item.priceAtPurchase).toLocaleString("en-IN", { maximumFractionDigits: 2 })} each</span>
                                   </p>
                                 </div>
-                                <div className="text-right shrink-0">
-                                  <p className="font-black text-slate-900 text-sm">
+                                <div className="text-right shrink-0 flex flex-col items-end">
+                                  <p className={`font-black text-sm ${item.product?.price && parseFloat(item.priceAtPurchase) < parseFloat(item.product.price) ? "text-red-500" : "text-slate-900"}`}>
                                     ₹
                                     {(
                                       parseFloat(item.priceAtPurchase) *
                                       item.quantity
-                                    ).toLocaleString()}
+                                    ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                                   </p>
+                                  {item.product?.price && parseFloat(item.priceAtPurchase) < parseFloat(item.product.price) && (
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <p className="text-[10px] line-through text-slate-300 font-medium">
+                                        ₹{parseFloat(item.product.price).toLocaleString()}
+                                      </p>
+                                      <span className="bg-red-50 text-red-500 border border-red-100 text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+                                        {(parseFloat(item.product.price) - parseFloat(item.priceAtPurchase)).toLocaleString("en-IN", { maximumFractionDigits: 0 })} OFF
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             ))}

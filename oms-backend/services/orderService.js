@@ -2,6 +2,7 @@ const prisma = require("../config/db");
 const stripe = require("../config/stripe");
 const ApiError = require("../utils/ApiError");
 const { sendOrderConfirmation, sendStatusUpdate } = require("./emailService");
+const { effectivePrice, validateCouponService } = require("./couponService");
 
 // ── Status transition rules ───────────────────────────────────────────────────
 const STATUS_FLOW = {
@@ -12,7 +13,12 @@ const STATUS_FLOW = {
 };
 
 // ── Place order ───────────────────────────────────────────────────────────────
-const placeOrderService = async (userId, items, stripePaymentId = null) => {
+const placeOrderService = async (
+  userId,
+  items,
+  stripePaymentId = null,
+  couponCode = null,
+) => {
   // 1. Fetch all products in one query
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({
@@ -33,20 +39,41 @@ const placeOrderService = async (userId, items, stripePaymentId = null) => {
     }
   }
 
-  // 3. Calculate total using current price as snapshot
-  const totalAmount = items.reduce((sum, item) => {
+  // 3. Calculate subtotal using product-level discounted price
+  const productSubtotal = items.reduce((sum, item) => {
     const product = products.find((p) => p.id === item.productId);
-    return sum + product.price * item.quantity;
+    return sum + effectivePrice(product) * item.quantity;
   }, 0);
 
-  // 4. Create order + deduct stock atomically inside a transaction
+  // 4. Validate and apply coupon discount (server-side re-validation)
+  let discountAmount = 0;
+  let validatedCoupon = null;
+  if (couponCode) {
+    const couponResult = await validateCouponService(
+      couponCode,
+      productSubtotal,
+    );
+    discountAmount = couponResult.discountAmount;
+    validatedCoupon = couponResult.coupon;
+  }
+
+  const totalAmount = Math.max(0, productSubtotal - discountAmount);
+
+  // 5. Create order + deduct stock + increment coupon usage atomically
   const order = await prisma.$transaction(async (tx) => {
     // Deduct stock for every product
     for (const item of items) {
-      const product = products.find((p) => p.id === item.productId);
       await tx.product.update({
         where: { id: item.productId },
         data: { stock: { decrement: item.quantity } },
+      });
+    }
+
+    // Increment coupon usedCount
+    if (validatedCoupon) {
+      await tx.coupon.update({
+        where: { id: validatedCoupon.id },
+        data: { usedCount: { increment: 1 } },
       });
     }
 
@@ -55,6 +82,8 @@ const placeOrderService = async (userId, items, stripePaymentId = null) => {
       data: {
         userId,
         totalAmount,
+        discountAmount,
+        couponCode: validatedCoupon ? validatedCoupon.code : null,
         status: stripePaymentId ? "CONFIRMED" : "PENDING",
         stripePaymentId: stripePaymentId || null,
         items: {
@@ -63,7 +92,7 @@ const placeOrderService = async (userId, items, stripePaymentId = null) => {
             return {
               productId: item.productId,
               quantity: item.quantity,
-              priceAtPurchase: product.price, // snapshot at purchase time
+              priceAtPurchase: effectivePrice(product), // snapshot after product discount
             };
           }),
         },
@@ -75,7 +104,7 @@ const placeOrderService = async (userId, items, stripePaymentId = null) => {
     });
   });
 
-  // 5. Send confirmation email (non-blocking — don't await)
+  // 6. Send confirmation email (non-blocking)
   sendOrderConfirmation(order).catch(console.error);
 
   return order;
@@ -138,7 +167,7 @@ const cancelOrderService = async (orderId, userId) => {
 
   // Restore stock + mark cancelled inside a transaction
   const cancelled = await prisma.$transaction(async (tx) => {
-    // Restore stock for every item
+    // Restore stock quantity for each item
     for (const item of order.items) {
       await tx.product.update({
         where: { id: item.productId },
@@ -146,10 +175,19 @@ const cancelOrderService = async (orderId, userId) => {
       });
     }
 
-    // Update the order status instead of hard deleting it
-    return tx.order.update({ 
+    // Decrement coupon usedCount if a coupon was used
+    if (order.couponCode) {
+      await tx.coupon
+        .update({
+          where: { code: order.couponCode },
+          data: { usedCount: { decrement: 1 } },
+        })
+        .catch(() => {}); // coupon might have been deleted
+    }
+
+    return tx.order.update({
       where: { id: orderId },
-      data: { status: "CANCELLED" }
+      data: { status: "CANCELLED" },
     });
   });
 
@@ -157,10 +195,10 @@ const cancelOrderService = async (orderId, userId) => {
 };
 
 // ── Create Payment Intent ──────────────────────────────────────────────────────
-const createPaymentIntentService = async (userId, items) => {
+const createPaymentIntentService = async (userId, items, couponCode = null) => {
   // 1. Fetch all products in one query
   const productIds = items.map((i) => i.productId);
-  const products   = await prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
   });
 
@@ -173,33 +211,46 @@ const createPaymentIntentService = async (userId, items) => {
     if (product.stock < item.quantity) {
       throw new ApiError(
         400,
-        `Insufficient stock for "${product.name}". Available: ${product.stock}`
+        `Insufficient stock for "${product.name}". Available: ${product.stock}`,
       );
     }
   }
 
-  // 3. Calculate total in rupees
-  const totalAmount = items.reduce((sum, item) => {
+  // 3. Calculate subtotal with product discounts
+  const productSubtotal = items.reduce((sum, item) => {
     const product = products.find((p) => p.id === item.productId);
-    return sum + product.price * item.quantity;
+    return sum + effectivePrice(product) * item.quantity;
   }, 0);
 
-  // 4. Create Stripe PaymentIntent
+  // 4. Apply coupon if provided
+  let discountAmount = 0;
+  if (couponCode) {
+    const couponResult = await validateCouponService(
+      couponCode,
+      productSubtotal,
+    );
+    discountAmount = couponResult.discountAmount;
+  }
+
+  const totalAmount = Math.max(0, productSubtotal - discountAmount);
+
+  // 5. Create Stripe PaymentIntent
   const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(totalAmount * 100),
     currency: "inr",
     metadata: {
       userId,
       itemCount: items.length.toString(),
+      couponCode: couponCode || "",
     },
-    automatic_payment_methods: {
-      enabled: true,
-    },
+    automatic_payment_methods: { enabled: true },
   });
 
   return {
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
+    productSubtotal,
+    discountAmount,
     totalAmount,
   };
 };
