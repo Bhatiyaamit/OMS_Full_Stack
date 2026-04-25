@@ -70,10 +70,15 @@ const CouponsPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const discountValue = parseFloat(form.discountValue);
+    if (form.discountType === "PERCENTAGE" && discountValue >= 100) {
+      toast.error("Percentage discount must be less than 100%");
+      return;
+    }
     const payload = {
       code: form.code.toUpperCase(),
       discountType: form.discountType,
-      discountValue: parseFloat(form.discountValue),
+      discountValue,
       minAmount: form.minAmount ? parseFloat(form.minAmount) : 0,
       maxDiscount: form.maxDiscount ? parseFloat(form.maxDiscount) : null,
       expiryDate: new Date(form.expiryDate).toISOString(),
@@ -312,21 +317,40 @@ const CouponsPage = () => {
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
                   Discount Value *
+                  {form.discountType === "PERCENTAGE" && (
+                    <span className="ml-1 text-on-surface-variant/60 normal-case font-medium tracking-normal">
+                      (max 100)
+                    </span>
+                  )}
                 </label>
                 <input
                   required
                   type="number"
                   min="0.01"
+                  max={form.discountType === "PERCENTAGE" ? 99.99 : undefined}
                   step="any"
                   value={form.discountValue}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, discountValue: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (
+                      form.discountType === "PERCENTAGE" &&
+                      parseFloat(val) >= 100
+                    )
+                      return;
+                    setForm((f) => ({ ...f, discountValue: val }));
+                  }}
                   placeholder={
-                    form.discountType === "PERCENTAGE" ? "20" : "100"
+                    form.discountType === "PERCENTAGE"
+                      ? "e.g. 20 (max 99)"
+                      : "e.g. 100"
                   }
                   className="mt-1.5 block w-full rounded-xl bg-surface-container-low ring-1 ring-outline-variant/20 border-0 px-4 py-3 text-on-surface text-sm focus:ring-primary focus:ring-1 outline-none"
                 />
+                <p className="text-[10px] text-on-surface-variant/70 mt-1 ml-0.5">
+                  {form.discountType === "PERCENTAGE"
+                    ? "Enter a % between 0–99"
+                    : "Enter a flat ₹ amount"}
+                </p>
               </div>
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
@@ -403,20 +427,43 @@ const CouponsPage = () => {
             <div className="flex items-center gap-3 py-2">
               <button
                 type="button"
+                role="switch"
+                aria-checked={form.isActive}
                 onClick={() =>
                   setForm((f) => ({ ...f, isActive: !f.isActive }))
                 }
-                className={`w-11 h-6 rounded-full transition-colors relative ${
-                  form.isActive ? "bg-primary" : "bg-surface-container"
-                }`}
+                style={{
+                  width: "44px",
+                  height: "24px",
+                  borderRadius: "9999px",
+                  border: "none",
+                  padding: "2px",
+                  backgroundColor: form.isActive
+                    ? "var(--color-primary)"
+                    : "var(--color-surface-container-high, #e2e8f0)",
+                  transition: "background-color 0.25s ease",
+                  position: "relative",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
               >
                 <span
-                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    form.isActive ? "translate-x-[22px]" : "translate-x-0.5"
-                  }`}
+                  style={{
+                    display: "block",
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50%",
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+                    transform: form.isActive
+                      ? "translateX(20px)"
+                      : "translateX(0px)",
+                    transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                    willChange: "transform",
+                  }}
                 />
               </button>
-              <span className="text-sm font-medium text-on-surface">
+              <span className="text-sm font-medium text-on-surface select-none">
                 {form.isActive ? "Active immediately" : "Save as inactive"}
               </span>
             </div>

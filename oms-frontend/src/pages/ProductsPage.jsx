@@ -14,14 +14,57 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-const productSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  description: z.string().min(2, "Description is required"),
-  price: z.coerce.number().positive("Price must be positive"),
-  stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
-  discountType: z.enum(["NONE", "PERCENTAGE", "FIXED"]).optional(),
-  discountValue: z.coerce.number().min(0).optional(),
-});
+const productSchema = z
+  .object({
+    name: z.string().min(2, "Name is required"),
+    description: z.string().min(2, "Description is required"),
+    price: z.coerce.number().positive("Price must be positive"),
+    stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
+    discountType: z.enum(["NONE", "PERCENTAGE", "FIXED"]).optional(),
+    discountValue: z.coerce
+      .number()
+      .min(0, "Discount value cannot be negative")
+      .optional(),
+  })
+  .superRefine(({ discountType, discountValue, price }, ctx) => {
+    if (discountType === "PERCENTAGE" && discountValue !== undefined) {
+      if (discountValue < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          minimum: 0,
+          type: "number",
+          inclusive: true,
+          message: "Percentage discount cannot be negative",
+          path: ["discountValue"],
+        });
+      } else if (discountValue >= 100) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_big,
+          maximum: 99.99,
+          type: "number",
+          inclusive: false,
+          message: "Percentage discount must be less than 100%",
+          path: ["discountValue"],
+        });
+      }
+    }
+
+    if (
+      discountType === "FIXED" &&
+      discountValue !== undefined &&
+      price !== undefined &&
+      discountValue >= price
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.too_big,
+        maximum: price - 0.01,
+        type: "number",
+        inclusive: false,
+        message: `Fixed discount must be less than the product price (₹${price})`,
+        path: ["discountValue"],
+      });
+    }
+  });
 
 const ProductsPage = () => {
   const { user } = useAuthStore();
@@ -544,14 +587,26 @@ const ProductsPage = () => {
                 {...register("discountValue")}
                 type="number"
                 min="0"
+                max={watch("discountType") === "PERCENTAGE" ? 99.99 : undefined}
                 step="any"
-                placeholder="e.g. 10"
+                placeholder={
+                  watch("discountType") === "PERCENTAGE"
+                    ? "e.g. 10 (max 99)"
+                    : "e.g. 100"
+                }
                 className="block w-full rounded-xl border-0 bg-surface-container-low py-4 px-4 text-on-surface ring-1 ring-inset ring-outline-variant/15 placeholder:text-outline focus:bg-surface-container-highest focus:ring-1 focus:ring-inset focus:ring-primary transition-all duration-200"
               />
-              <p className="text-[11px] text-on-surface-variant mt-1 ml-1">
-                {/* Contextual hint */}
-                Leave 0 if no discount
-              </p>
+              {errors.discountValue ? (
+                <p className="text-error text-[11px] font-medium ml-1 mt-1">
+                  {errors.discountValue.message}
+                </p>
+              ) : (
+                <p className="text-[11px] text-on-surface-variant mt-1 ml-1">
+                  {watch("discountType") === "PERCENTAGE"
+                    ? "Enter % between 0–99"
+                    : "Leave 0 if no discount"}
+                </p>
+              )}
             </div>
           </div>
 
