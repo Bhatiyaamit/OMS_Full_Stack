@@ -13,6 +13,7 @@ const cartRoutes = require("./routes/cart.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const couponRoutes = require("./routes/coupon.routes");
 const errorHandler = require("./middleware/errorHandler");
+const { handleMcpRequest, requireMcpApiKey } = require("./mcp/mcpServer");
 
 const app = express();
 
@@ -37,6 +38,15 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/coupons", couponRoutes);
+
+// ── MCP endpoint (read-only tools over Streamable HTTP) ───────────────
+app.post("/mcp", requireMcpApiKey, express.json(), async (req, res) => {
+  try {
+    await handleMcpRequest(req, res, req.body);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // ── Swagger docs ──────────────────────────────────────
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

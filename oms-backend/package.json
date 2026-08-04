@@ -24,6 +24,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@prisma/client": "^6.19.2",
     "adm-zip": "^0.5.17",
     "bcryptjs": "^2.4.3",
